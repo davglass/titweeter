@@ -4,12 +4,13 @@
     db.execute('create table if not exists accounts (login text, passwd text)');
 
     //Check for credentials
+    Titanium.API.log('debug', 'Fetching from accounts');
     var rows = db.execute('select * from accounts');
 
-    while (rows.isValidRow()) {
+    if (rows.isValidRow()) {
+        Titanium.API.log('debug', 'Got a record');
         login = rows.fieldByName('login');
         passwd = rows.fieldByName('passwd');
-        rows.next();
     }
     rows.close();
     
@@ -20,7 +21,7 @@
 
         var activityIndicator = Titanium.UI.createActivityIndicator();
         Titanium.UI.currentWindow.setRightNavButton(activityIndicator);
-        var url = "http:/"+"/" + login + ":" + passwd + "@twitter.com/statuses/friends_timeline.json?count=50";
+        var url = "http:/"+"/" + login + ":" + passwd + "@twitter.com/statuses/friends_timeline.json?count=25";
 
         Titanium.API.log('debug', 'URL: ' + url);
 
@@ -31,19 +32,15 @@
             var data = [];
             for (var c = 0; c < json.length; c++) {
                 var row = json[c];
+                var color = (((c % 2) == 0) ? '#ccc' : '#eee');
+                
 
-                var bgcolor = "";
-                if (Titanium.Platform.name == 'android') {
-                    bgcolor = (c % 2) == 0 ? 'background-color:#333;color:white' : 'background-color:#eee';
-                } else {
-                    bgcolor = (c % 2) == 0 ? '' : 'background-color:#eee';
-                }
-                var html = "<div style='position:relative;padding:0;height:80px;"+bgcolor+"'>";
-                html += "<div style='position:absolute;left:0;top:5px;border:2px solid #999;'><img src='"+row.user.profile_image_url+"'/></div>";
-                html+='<div style="position:absolute;top:6px;left:60px;height:70px;font-size:11px;">'+row.text+'</div>';
-                html+="</div>";
+                var html = '<div class="timeline_post" style="position:relative; background-color: ' + color + '; color: black; font-size: 12px; height: 80px;">';
+                html += '<img src="' + row.user.profile_image_url + '" style="height: 48px; width: 48px; position: absolute; top: 3px; left: 3px;">';
+                html += '<div class="text" style="padding: 2px; position: absolute; top: 3px; left: 52px;">' + row.text + '</div>';
+                html += "</div>";
 
-                data[c] = {html:html};
+                data[c] = { html: html };
             }
             var tableView = Titanium.UI.createTableView({data:data,rowHeight:80},function(){});
             Titanium.UI.currentWindow.addView(tableView);
