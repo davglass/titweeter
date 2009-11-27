@@ -1,0 +1,5 @@
+h1. Titweeter
+
+This is my first attempt at building a Titanium Mobile app.
+
+
