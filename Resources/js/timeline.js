@@ -33,11 +33,13 @@
             for (var c = 0; c < json.length; c++) {
                 var row = json[c];
                 var color = (((c % 2) == 0) ? '#ccc' : '#eee');
-                
+                var d = toRelativeTime(new Date(row.created_at));
 
-                var html = '<div class="timeline_post" style="position:relative; background-color: ' + color + '; color: black; font-size: 12px; height: 80px;">';
-                html += '<img src="' + row.user.profile_image_url + '" style="height: 48px; width: 48px; position: absolute; top: 3px; left: 3px;">';
-                html += '<div class="text" style="padding: 2px; position: absolute; top: 3px; left: 52px;">' + row.text + '</div>';
+                var html = '<div class="timeline_post" style="position: relative; color: black; font-size: 10px; height: 80px;">';
+                html += '<h2 style="font-weight: bold; font-size: 10px; color: #fff;">' + row.user.name + ': ' + d + ' from ' + row.source + '</h2>';
+                html += '<img src="' + row.user.profile_image_url + '" style="height: 36px; width: 36px; position: absolute; top: 14px; left: 0;">';
+                html += '<div class="text" style="padding: 4px; position: absolute; top: 14px; left: 43px; background-color: ' + color + '; -webkit-border-radius: 4px; border: 1px solid ' + color + ';">';
+                html += row.text + '</div>';
                 html += "</div>";
 
                 data[c] = { html: html };
@@ -60,3 +62,44 @@
 		var w = Titanium.UI.createWindow({ url: 'login.html', hideTabBar: 'true', hideNavBar: 'true' });
 		w.open();        
     }
+
+
+    function toRelativeTime(d,from) {
+        d = d || new Date();
+        from = from || new Date();
+
+        var delta = (from.getTime() - d.getTime()) / 1000;
+
+        return delta < 5      ? toRelativeTime.strings.now :
+               delta < 60     ? toRelativeTime.strings.seconds :
+               delta < 120    ? toRelativeTime.strings.minute :
+               delta < 3600   ? toRelativeTime.strings.minutes.
+                                    replace(/X/, Math.floor(delta/60)) :
+               delta < 7200   ? toRelativeTime.strings.hour :
+               delta < 86400  ? toRelativeTime.strings.hours.
+                                    replace(/X/, Math.floor(delta/3600)) :
+               delta < 172800 ? toRelativeTime.strings.day :
+
+               toRelativeTime.strings.days.
+                                    replace(/X/, Math.floor(delta/86400));
+    }
+
+    /**
+     * The strings to use for relative times.  Represent Numbers (minutes, hours,
+     * days) as X (e.g. "about X hours ago"). Keys are now, seconds, minute,
+     * minutes, hour, hours, day, and days.
+     *
+     * @property toRelativeTime.strings
+     * @type {Object}
+     */
+    toRelativeTime.strings = {
+        now     : "right now",
+        seconds : "less than a minute ago",
+        minute  : "about a minute ago",
+        minutes : "X minutes ago",
+        hour    : "about an hour ago",
+        hours   : "about X hours ago",
+        day     : "1 day ago" ,
+        days    : "X days ago"
+    };
+    
