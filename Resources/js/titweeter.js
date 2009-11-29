@@ -2,9 +2,29 @@ var TT = {
     db: null,
     users: {},
     statuses: {},
-    openDB: function(){
-        TT.db = Titanium.Database.open('titweeter'); 
+    openDB: function() {
+        if (!TT.db) {
+            TT.db = Titanium.Database.open('titweeter');
+            TT.db.execute('create table if not exists accounts (login text, passwd text)');
+            TT.db.execute('create table if not exists data (key text, value text)');
+        }
         return TT.db;
+    },
+    setData: function(key, value) {
+        TT.log('setData: ' + key + ' :: ' + value);
+        return TT.db.execute('replace into data (key, value) values ("' + key + '", "' + value + '")');
+    },
+    getData: function(key) {
+        var rows = TT.db.execute('select * from data (where key = "' + key + '")'),
+            value = null;
+
+        if (rows.isValidRow()) {
+            value = rows.fieldByName('value');
+        }
+        rows.close();
+        
+        TT.log('getData: ' + key + ' :: ' + value);
+        return value;
     },
     log: function(str) {
         Titanium.API.log('debug', str);
@@ -21,6 +41,7 @@ var TT = {
             login: null,
             passwd: null
         };
+        TT.openDB();
         //Debugging
         //TT.db.execute('delete from accounts');
         var rows = TT.db.execute('select * from accounts');
@@ -74,11 +95,11 @@ var TT = {
         Titanium.UI.currentWindow.setRightNavButton(activityIndicator);
         var url = "http:/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/home_timeline.json?count=50";
 
-        TT.log('URL: ' + url);
+        TT.log('Timeline URL: ' + url);
 
         var xhr = Titanium.Network.createHTTPClient();
         xhr.onload = function() {
-            TT.log('XHR Loaded');
+            TT.log('Timeline XHR Loaded');
             var json = eval('(' + this.responseText + ')');
             var data = [],
                 ul = document.createElement('ul');
@@ -135,24 +156,28 @@ var TT = {
             ti.appendChild(ul);
             ti.style.display = 'block';
 
-            YUI().use('node', function(Y) {
-                Y.delegate('click', function(e) {
-                    TT.log('Click: ' + e.currentTarget.one('.text').get('innerHTML'));
-                    var id = parseInt(e.currentTarget.get('id').replace('status_', ''), 10);
-                    TT.showStatus(id);
-                }, '#timeline', 'li');
-            });
-
         };
         xhr.open("GET",url);
         xhr.send();
+
+        YUI().use('node', function(Y) {
+            Y.delegate('click', function(e) {
+                TT.log('Delegate Click');
+                TT.log('Click: ' + e.currentTarget.one('.text').get('innerHTML'));
+                var id = parseInt(e.currentTarget.get('id').replace('status_', ''), 10);
+                TT.log('ID: ' + id);
+                TT.showStatus(id);
+            }, '#timeline', 'li');
+        });
+
         
     },
     showStatus: function(id) {
+        TT.log('Show Status: ' + id);
+        TT.setData('currentStatus', id);
         var win = Titanium.UI.createWindow({ url: 'status.html' });
-        win.open({ animated: true });
+        win.open();
         
-        TT.currentStatus = TT.statues[id];
             
     },
     showTimelineView: function(creds) {
@@ -278,7 +303,6 @@ var TT = {
                         TT.db.execute('delete from accounts');
                         TT.db.execute('insert into accounts (login, passwd) values ("' + login + '", "' + passwd + '")');
                         
-                        TT.db.close();
                         TT.log('Close Login Window');
                         document.getElementById('login').style.display = 'none';
                         TT.showTimeline({
