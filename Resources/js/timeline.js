@@ -7,12 +7,12 @@
     var creds = TT.getCreds();
     
     if (creds.login && creds.passwd) {
-        TT.showTimeline(creds);
-        document.getElementById('login').style.display = 'none';
+        TT.showTimelineView(creds);
+        //document.getElementById('login').style.display = 'none';
         TT.db.close();
     } else {
         TT.log('No Creds, loading login screen');
-        TT.showLogin();
+        //TT.showLogin();
     }
 
 

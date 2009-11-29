@@ -3,34 +3,27 @@
 
     TT.log('Loading Status..');
 
-    YUI().use('node', function(Y) {
+    var creds = TT.getCreds(),
+        id = Titanium.App.Properties.getString('currentStatus'),
+        url = 'http:/'+'/' + creds.login + ':' + creds.passwd + '@twitter.com/statuses/show/' + id + '.json',
+        xhr = Titanium.Network.createHTTPClient();
 
-        var creds = TT.getCreds(),
-            id = TT.getData('currentStatus'),
-            url = 'http:/'+ +'/' + creds.login + ':' + creds.passwd + '@twitter.com/statuses/show/' + id + '.json',
-            xhr = Titanium.Network.createHTTPClient();
+    TT.log('URL: ' + url);
 
-        TT.log('URL: ' + url);
+    xhr.onload = function() {
+        TT.log('Status XHR Loaded');
+        var stat = eval('(' + this.responseText + ')');
+        
+        document.getElementsByTagName('img')[0].src = stat.user.profile_image_url;
+        document.getElementsByTagName('h1')[0].innerHTML = stat.user.name;
+        document.getElementsByTagName('h3')[0].innerHTML = '@' + stat.user.screen_name;
+        document.getElementsByTagName('em')[0].innerHTML = stat.user.followers_count;
+        document.getElementsByTagName('strong')[0].innerHTML = stat.user.friends_count;
+        //document.getElementsByTagName('span')[0].innerHTML = stat.user.description;
 
-        xhr.onload = function() {
-            TT.log('Status XHR Loaded');
-            var stat = eval('('+this.responseText+')'),
-                h = Y.one('#hd'),
-                list = h.one('ul');
+        document.getElementsByTagName('ul')[0].innerHTML = '<li class="status">' + stat.text + '</li>';
+        
+    };
+    xhr.open("GET", url);
+    xhr.send();
 
-            h.one('img').set('src', stat.user.profile_image_url);
-            h.one('h1').set('innerHTML', stat.user.name);
-            h.one('h3').set('innerHTML', '@' + stat.user.screen_name);
-            h.one('em').set('innerHTML', stat.user.followers_count);
-            h.one('strong').set('innerHTML', stat.user.following_count);
-            h.one('span').set('innerHTML', stat.user.description);
-            
-            h.get('parentNode').one('.status_list').append('<li>' + stat.text + '</li>');
-            
-        };
-        xhr.open("GET", url);
-        xhr.send();
-
-
-
-    });

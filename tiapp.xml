@@ -10,8 +10,9 @@
     <windows>
         <window>
             <id>initial</id>
+            <title>Timeline</title>
             <url>index.html</url>
-            <backgroundColor>#111</backgroundColor>
+            <backgroundColor>#000</backgroundColor>
 			<icon>ti://featured</icon>
 			<barColor>#000</barColor>
 			<fullscreen>false</fullscreen>
