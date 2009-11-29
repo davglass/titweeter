@@ -9,20 +9,10 @@
     if (creds.login && creds.passwd) {
         TT.showTimeline(creds);
         document.getElementById('login').style.display = 'none';
+        TT.db.close();
     } else {
         TT.log('No Creds, loading login screen');
         TT.showLogin();
-        /*
-        var LoginView = Titanium.UI.createWebView({
-            url: 'login.html',
-            name:'login'
-        });
-        Titanium.UI.currentWindow.addView(LoginView);
-        Titanium.UI.currentWindow.showView(LoginView);
-		var w = Titanium.UI.createWindow({ url: 'login.html', hideTabBar: 'true', hideNavBar: 'true' });
-		w.open();        
-        */
-
     }
 
 

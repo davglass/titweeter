@@ -2,22 +2,10 @@
 	<head>
 		<title>Titweeter: Timeline</title>
         <link rel="stylesheet" type="text/css" href="css/twitter.css">
-		<style>
-		.section {
-			border:1px solid #ccc;
-			-webkit-border-top-right-radius: 5px;
-			-webkit-border-top-left-radius: 5px;
-			-webkit-border-bottom-right-radius: 5px;
-			-webkit-border-bottom-left-radius: 5px;
-			padding:10px;
-			color:#777;
-			margin:10px;
-		}
-
-		</style>
-        
 	</head>
 	<body>
+        <div id="loading">Loading Timeline..</div>
+        <div id="timeline"></div>
         <div id="login">
             <div class="section" style="height:50px;text-align:center">
                     <img src="twitter.png"></img>
@@ -43,6 +31,7 @@
             </div>
         </div>
         
+		<script src="js/yui3.js"></script>
 		<script src="js/titweeter.js"></script>
 		<script src="js/timeline.js"></script>
 	</body>

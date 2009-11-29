@@ -1,6 +1,7 @@
 var TT = {
     db: null,
     users: {},
+    statuses: {},
     openDB: function(){
         TT.db = Titanium.Database.open('titweeter'); 
         return TT.db;
@@ -59,7 +60,92 @@ var TT = {
         day     : "1 day ago" ,
         days    : "X days ago"
     },
+    hideLoading: function() {
+        document.getElementById('loading').style.display = 'none';
+    },
     showTimeline: function(creds) {
+        TT.log('Loading the WebView Timeline');
+        TT.hideLoading();
+        TT.log('Found Login and Password');
+        TT.log('Login: ' + creds.login);
+        TT.log('Passwd: ' + creds.passwd);
+
+        var activityIndicator = Titanium.UI.createActivityIndicator();
+        Titanium.UI.currentWindow.setRightNavButton(activityIndicator);
+        var url = "http:/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/friends_timeline.json?count=25";
+
+        TT.log('URL: ' + url);
+
+        var xhr = Titanium.Network.createHTTPClient();
+        xhr.onload = function() {
+            TT.log('XHR Loaded');
+            var json = eval('(' + this.responseText + ')');
+            var data = [],
+                ul = document.createElement('ul');
+            for (var c = 0; c < json.length; c++) {
+                var row = json[c];
+                TT.users[row.user.id] = row.user;
+                TT.statuses[row.id] = row;
+            }
+            for (var c = 0; c < json.length; c++) {
+                var row = json[c];
+                var color = (((c % 2) == 0) ? '#ccc' : '#eee');
+                var d = TT.toRelativeTime(new Date(row.created_at));
+                var s = row.source;
+                var div = document.createElement('div');
+                div.innerHTML = s;
+                var a = div.firstChild;
+                if (a.nodeName == 'A') {
+                    s = a.innerHTML;
+                }
+
+                s = ' from ' + s;
+                if (row.in_reply_to_status_id) {
+                    s = ' in reply to ' + row.in_reply_to_screen_name;
+                }
+
+                var html = '';
+                html += '<h2>' + row.user.name + ': ' + d + s + '</h2>';
+                html += '<img src="' + row.user.profile_image_url + '">';
+                html += '<div class="text">' + row.text + '</div>';
+
+                var li = document.createElement('li');
+                li.id = 'status_' + row.id
+                li.innerHTML = html;
+                if (row.user.screen_name == creds.login) {
+                    li.className = 'mine';
+                }
+                ul.appendChild(li);
+
+                data[c] = { html: html };
+            }
+
+            var ti = document.getElementById('timeline');
+            ti.appendChild(ul);
+            ti.style.display = 'block';
+
+            YUI().use('node', function(Y) {
+                Y.delegate('click', function(e) {
+                    TT.log('Click: ' + e.currentTarget.one('.text').get('innerHTML'));
+                    var id = parseInt(e.currentTarget.get('id').replace('status_', ''), 10);
+                    TT.showStatus(id);
+                }, '#timeline', 'li');
+            });
+
+        };
+        xhr.open("GET",url);
+        xhr.send();
+        
+    },
+    showStatus: function(id) {
+        var win = Titanium.UI.createWindow({ url: 'status.html' });
+        win.open({ animated: true });
+        
+        TT.currentStatus = TT.statues[id];
+            
+    },
+    showTimelineView: function(creds) {
+        TT.hideLoading();
         TT.log('Found Login and Password');
         TT.log('Login: ' + creds.login);
         TT.log('Passwd: ' + creds.passwd);
@@ -96,23 +182,24 @@ var TT = {
                     s = ' in reply to FOO';
                 }
 
-                var html = '<div class="timeline_post" style="position: relative; color: black; font-size: 10px; height: 80px;">';
+                var html = '<div class="timeline_post" style="position: relative; color: black; font-size: 10px; height: 88px;">';
                 html += '<h2 style="font-weight: bold; font-size: 10px; color: #fff;">' + row.user.name + ': ' + d + s + '</h2>';
                 html += '<img src="' + row.user.profile_image_url + '" style="height: 36px; width: 36px; position: absolute; top: 14px; left: 0;">';
-                html += '<div class="text" style="padding: 4px; position: absolute; top: 14px; left: 43px; background-color: ' + color + '; -webkit-border-radius: 4px; border: 1px solid ' + color + ';">';
+                html += '<div class="text" style="padding: 4px; position: absolute; top: 14px; left: 43px; font-size: 11px; background-color: ' + color + '; -webkit-border-top-right-radius: 4px; -webkit-border-bottom-left-radius: 4px; border: 1px solid ' + color + ';">';
                 html += row.text + '</div>';
                 html += "</div>";
 
                 data[c] = { html: html };
             }
-            var tableView = Titanium.UI.createTableView({data:data,rowHeight:80},function (e) {
+            var tableView = Titanium.UI.createTableView({ data: data, rowHeight: 90 },function (e) {
                 TT.log('TableView clicked..');
+                /*
                 var a = Titanium.UI.createAlertDialog();
                     a.setTitle('Table View');
                     //a.setMessage('row ' + e.row + ' index ' + e.index + ' section ' + e.section + ' rowData ' + e.rowData);
                     a.setMessage(json[e.index].text);
                     a.show(); 
-                
+                */
             });
             Titanium.UI.currentWindow.addView(tableView);
             Titanium.UI.currentWindow.showView(tableView);
@@ -165,12 +252,11 @@ var TT = {
 
 			var login = tf1.value,
 			    passwd = tf2.value,
-                url = 'http:/'+'/' + login + ':' + passwd + '@twitter.com/account/verify_credentials.json',
+                url = 'https:/'+'/' + login + ':' + passwd + '@twitter.com/account/verify_credentials.json',
                 xhr = Titanium.Network.createHTTPClient();
 
             if (login != '' && passwd != '') {
                 TT.log('Fetching URL: ' + url);
-                //Failes on a 401 not authorized??
                 xhr.onload = function() {
                     TT.log('Verify Creds');
                     var json = eval('('+this.responseText+')');
