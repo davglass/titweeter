@@ -72,7 +72,7 @@ var TT = {
 
         var activityIndicator = Titanium.UI.createActivityIndicator();
         Titanium.UI.currentWindow.setRightNavButton(activityIndicator);
-        var url = "http:/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/friends_timeline.json?count=25";
+        var url = "http:/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/home_timeline.json?count=50";
 
         TT.log('URL: ' + url);
 
@@ -104,10 +104,21 @@ var TT = {
                     s = ' in reply to ' + row.in_reply_to_screen_name;
                 }
 
+                var username = row.user.name,
+                    img = row.user.profile_image_url,
+                    txt = row.text;
+                if (row.retweeted_status) {
+                var username = row.retweeted_status.user.name,
+                    img = row.retweeted_status.user.profile_image_url,
+                    txt = row.retweeted_status.text;
+                    s = ' retweeted by ' + row.user.name + ' ' + d;
+                    d = '';
+                }
+
                 var html = '';
-                html += '<h2>' + row.user.name + ': ' + d + s + '</h2>';
-                html += '<img src="' + row.user.profile_image_url + '">';
-                html += '<div class="text">' + row.text + '</div>';
+                html += '<h2>' + username + ': ' + d + s + '</h2>';
+                html += '<img src="' + img + '">';
+                html += '<div class="text">' + txt + '</div>';
 
                 var li = document.createElement('li');
                 li.id = 'status_' + row.id
