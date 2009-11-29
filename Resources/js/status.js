@@ -23,6 +23,7 @@
 
         document.getElementsByTagName('ul')[0].innerHTML = '<li class="status">' + stat.text + '</li>';
         
+        TT.hideLoading();        
     };
     xhr.open("GET", url);
     xhr.send();

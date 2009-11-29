@@ -10,7 +10,34 @@
 
             if (creds.login && creds.passwd) {
                 TT.log('Loading Timeline');
+                TT.showLoading();
                 TT.showTimelineView(creds);
+                
+                var menu = Titanium.UI.createMenu();
+
+                menu.addItem("Post", function() {
+                }, Titanium.UI.Android.SystemIcon.SHARE);
+
+                menu.addItem("Timeline", function() {
+                }, Titanium.UI.Android.SystemIcon.VIEW);
+
+                menu.addItem("Mentions", function() {
+                }, Titanium.UI.Android.SystemIcon.ZOOM);
+
+                menu.addItem("Directs", function() {
+                }, Titanium.UI.Android.SystemIcon.SEND);
+
+                menu.addItem("Search", function() {
+                }, Titanium.UI.Android.SystemIcon.SEARCH);
+
+                menu.addItem("Options", function() {
+                }, Titanium.UI.Android.SystemIcon.PREFERENCES);
+
+
+                Titanium.UI.setMenu(menu);
+
+
+
             } else {
                 TT.log('No Creds, loading login screen');
             }

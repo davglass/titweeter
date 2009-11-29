@@ -19,6 +19,23 @@ var TT = {
         a.show(); 
     
     },
+    _loading: null,
+    showLoading: function(str) {
+        TT.log('show loading indicator');
+        str = ((str) ? str : 'Loading..');
+        var ind = Titanium.UI.createActivityIndicator();
+        ind.setMessage(str);
+        ind.setLocation(Titanium.UI.ActivityIndicator.DIALOG)
+        ind.setType(Titanium.UI.ActivityIndicator.INDETERMINANT)
+        ind.show();
+        TT._loading = ind;
+    },
+    hideLoading: function() {
+        TT.log('hide loading indicator');
+        if (TT._loading) {
+            TT._loading.hide();
+        }
+    },
     getCreds: function() {
         var creds = {
             login: null,
@@ -138,21 +155,14 @@ var TT = {
                 Titanium.App.Properties.setString('currentStatus', json[e.index].id);
                 
                 TT.log('Create status window..');
+                
                 var win = Titanium.UI.createWindow({ url: 'status.html' });
                 win.open();
-                //var win = Titanium.UI.createWebView({ url: 'status.html' });
-                //Titanium.UI.currentWindow.addView(win);
-                //Titanium.UI.currentWindow.showView(win);
-                /*
-                var a = Titanium.UI.createAlertDialog();
-                    a.setTitle('Table View');
-                    a.setMessage(json[e.index].text);
-                    a.show(); 
-                */
             });
             Titanium.UI.currentWindow.addView(tableView);
             Titanium.UI.currentWindow.showView(tableView);
-
+            TT.hideLoading();
+            
         };
         xhr.open("GET",url);
         xhr.send();
