@@ -10,7 +10,7 @@
     <windows>
         <window>
             <id>initial</id>
-            <title>Timeline</title>
+            <title>Titweeter: Timeline</title>
             <url>index.html</url>
             <backgroundColor>#000</backgroundColor>
 			<icon>ti://featured</icon>

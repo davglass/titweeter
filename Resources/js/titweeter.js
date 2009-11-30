@@ -2,13 +2,6 @@ var TT = {
     db: null,
     users: {},
     statuses: {},
-    openDB: function() {
-        if (!TT.db) {
-            TT.db = Titanium.Database.open('titweeter');
-            TT.db.execute('create table if not exists accounts (login text, passwd text)');
-        }
-        return TT.db;
-    },
     log: function(str) {
         Titanium.API.log('debug', str);
     },
@@ -19,6 +12,7 @@ var TT = {
         a.show(); 
     
     },
+    proto: 'http',
     _loading: null,
     showLoading: function(str) {
         TT.log('show loading indicator');
@@ -36,22 +30,15 @@ var TT = {
             TT._loading.hide();
         }
     },
+    setCreds: function(l, p) {
+        Titanium.App.Properties.setString('LOGIN', l),
+        Titanium.App.Properties.setString('PASSWD', p)
+    },
     getCreds: function() {
         var creds = {
-            login: null,
-            passwd: null
+            login: Titanium.App.Properties.getString('LOGIN'),
+            passwd: Titanium.App.Properties.getString('PASSWD')
         };
-        TT.openDB();
-        //Debugging
-        //TT.db.execute('delete from accounts');
-        var rows = TT.db.execute('select * from accounts');
-
-        if (rows.isValidRow()) {
-            TT.log('Got a record');
-            creds.login = rows.fieldByName('login');
-            creds.passwd = rows.fieldByName('passwd');
-        }
-        rows.close();
 
         return creds;
     },
@@ -81,15 +68,6 @@ var TT = {
         day     : "1 day ago" ,
         days    : "X days ago"
     },
-    showStatus: function(id) {
-        TT.log('Show Status: ' + id);
-        Titanium.App.Properties.setInt('currentStatus', id);
-        
-        var win = Titanium.UI.createWindow({ url: 'status.html' });
-        win.open();
-        
-            
-    },
     showTimelineView: function(creds) {
         TT.log('Found Login and Password');
         TT.log('Login: ' + creds.login);
@@ -97,7 +75,7 @@ var TT = {
 
         var activityIndicator = Titanium.UI.createActivityIndicator();
         Titanium.UI.currentWindow.setRightNavButton(activityIndicator);
-        var url = "http:/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/home_timeline.json?count=50";
+        var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/home_timeline.json?count=50";
 
         TT.log('URL: ' + url);
 
@@ -109,6 +87,7 @@ var TT = {
             for (var c = 0; c < json.length; c++) {
                 var row = json[c];
                 TT.users[row.user.id] = row.user;
+                TT.statuses[row.id] = row;
             }
             for (var c = 0; c < json.length; c++) {
                 var row = json[c];
@@ -153,6 +132,7 @@ var TT = {
 
                 TT.log('currentStatus: ' + json[e.index].id);
                 Titanium.App.Properties.setString('currentStatus', json[e.index].id);
+                Titanium.App.Properties.setList('currentStatusList', json[e.index]);
                 
                 TT.log('Create status window..');
                 
@@ -168,87 +148,10 @@ var TT = {
         xhr.send();
     
     },
-    showLogin: function() {
-        document.title = 'Titweeter: Login';
-		var height = (Titanium.Platform.name.indexOf('iPhone') != -1) ? 30: 40;
-		var tf1 = Titanium.UI.createTextField({
-			id:'textfield1',
-			value:'',
-			keyboardType:Titanium.UI.KEYBOARD_EMAIL,
-			hintText:'enter username',
-			width:170,
-			height:height,
-			clearOnEdit:true,
-			borderStyle:Titanium.UI.INPUT_BORDERSTYLE_ROUNDED,
-			clearButtonMode:Titanium.UI.INPUT_BUTTONMODE_ALWAYS
-		});
-		var tf2 = Titanium.UI.createTextField({
-			id:'textfield2',
-			value:'',
-			keyboardType:Titanium.UI.KEYBOARD_ASCII,
-			hintText:'enter password',
-			width:170,
-			height:height,
-			clearOnEdit:true,
-			passwordMask:true,
-			borderStyle:Titanium.UI.INPUT_BORDERSTYLE_ROUNDED,
-			clearButtonMode:Titanium.UI.INPUT_BUTTONMODE_ALWAYS
-		});
-		var button = Titanium.UI.createButton({
-			id:'button',
-			title:'Login',
-			color:'#336699',
-			height:32,
-			width:100,
-			fontSize:12,
-			fontWeight:'bold'
-		});
-		button.addEventListener('click', function() {
-            TT.log('Checking Creds');
-			// hide the keyboards if they're showing
-			tf1.blur();
-			tf2.blur();
-
-			var login = tf1.value,
-			    passwd = tf2.value,
-                url = 'https:/'+'/' + login + ':' + passwd + '@twitter.com/account/verify_credentials.json',
-                xhr = Titanium.Network.createHTTPClient();
-
-            if (login != '' && passwd != '') {
-                TT.log('Fetching URL: ' + url);
-                xhr.onload = function() {
-                    TT.log('Verify Creds');
-                    var json = eval('('+this.responseText+')');
-                    if (json.error) {
-                        TT.log('ERROR: ' + json.error);
-                        TT.showError(json.error);
-                    } else {
-                        TT.db.execute('delete from accounts');
-                        TT.db.execute('insert into accounts (login, passwd) values ("' + login + '", "' + passwd + '")');
-                        
-                        TT.log('Close Login Window');
-                        document.getElementById('login').style.display = 'none';
-                        TT.showTimeline({
-                            login: login,
-                            passwd: passwd
-                        });
-                    }
-
-                };
-                xhr.open("GET",url);
-                xhr.send();
-            } else {
-                TT.log('Show Error');
-                if (!login) {
-                    TT.showError('Username is required');
-			        tf1.focus();
-                } else {
-                    TT.showError('Password is required');
-			        tf2.focus();
-                }
-            }
-
-		});
+    showSettings: function() {
+        TT.log('TT.showSettings');
+        var win = Titanium.UI.createWindow({ url: 'settings.html', fullscreen: true });
+        win.open();
     }
 };
 

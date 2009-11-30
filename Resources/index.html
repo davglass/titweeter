@@ -16,30 +16,41 @@
                 var menu = Titanium.UI.createMenu();
 
                 menu.addItem("Post", function() {
+                    TT.log('Menu: Post');
                 }, Titanium.UI.Android.SystemIcon.SHARE);
 
                 menu.addItem("Timeline", function() {
+                    TT.log('Menu: Timeline');
                 }, Titanium.UI.Android.SystemIcon.VIEW);
 
                 menu.addItem("Mentions", function() {
+                    TT.log('Menu: Mentions');
                 }, Titanium.UI.Android.SystemIcon.ZOOM);
 
                 menu.addItem("Directs", function() {
+                    TT.log('Menu: Directs');
                 }, Titanium.UI.Android.SystemIcon.SEND);
 
                 menu.addItem("Search", function() {
+                    TT.log('Menu: Search');
                 }, Titanium.UI.Android.SystemIcon.SEARCH);
 
                 menu.addItem("Options", function() {
+                    TT.log('Menu: Options');
+                    TT.showSettings();
                 }, Titanium.UI.Android.SystemIcon.PREFERENCES);
+
+                menu.addItem("Exit", function() {
+                    TT.log('Menu: Close');
+                    Titanium.UI.currentWindow.close();
+                }, Titanium.UI.Android.SystemIcon.CLOSE);
 
 
                 Titanium.UI.setMenu(menu);
 
-
-
             } else {
                 TT.log('No Creds, loading login screen');
+                TT.showSettings();
             }
         </script>
 	</body>
