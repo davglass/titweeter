@@ -128,16 +128,12 @@ var TT = {
                 }
                 
 
-                var html = '<div class="timeline_post" style="position: relative; color: black; font-size: 10px; height: 88px;">';
-                html += '<h2 style="font-weight: bold; font-size: 10px; color: #fff;">' + username + ': ' + d + s + '</h2>';
-                html += '<img src="' + img + '" style="height: 36px; width: 36px; position: absolute; top: 14px; left: 0;">';
-                html += '<div class="text" style="padding: 4px; position: absolute; top: 14px; left: 43px; font-size: 11px; background-color: ' + color + '; -webkit-border-top-right-radius: 4px; -webkit-border-bottom-left-radius: 4px; border: 1px solid ' + color + ';">';
+                var html = '<div class="text" style="padding: 2px; font-size: 11px; background-color: ' + color + '; -webkit-border-top-right-radius: 4px; -webkit-border-bottom-left-radius: 4px; -webkit-border-bottom-right-radius: 4px; border: 1px solid ' + color + ';">';
                 html += txt + '</div>';
-                html += "</div>";
 
-                data[c] = { html: html, json: row };
+                data[c] = { html: html, json: row, image: img, header:  username + ': ' + d + s };
             }
-            var tableView = Titanium.UI.createTableView({ data: data, rowHeight: 90 },function (e) {
+            var tableView = Titanium.UI.createTableView({ data: data, rowHeight: 60 },function (e) {
                 TT.log('TableView clicked..');
                 TT.log('currentStatus: ' + e.rowData.json.id);
                 if (e.rowData.json.retweeted_status) {
@@ -282,14 +278,10 @@ var TT = {
                 }
                 
 
-                var html = '<div class="timeline_post" style="position: relative; color: black; font-size: 10px; height: 88px;">';
-                html += '<h2 style="font-weight: bold; font-size: 10px; color: #fff;">' + username + ': ' + d + s + '</h2>';
-                html += '<img src="' + img + '" style="height: 36px; width: 36px; position: absolute; top: 14px; left: 0;">';
-                html += '<div class="text" style="padding: 4px; position: absolute; top: 14px; left: 43px; font-size: 11px; background-color: ' + color + '; -webkit-border-top-right-radius: 4px; -webkit-border-bottom-left-radius: 4px; border: 1px solid ' + color + ';">';
+                var html = '<div class="text" style="padding: 4px; font-size: 11px; background-color: ' + color + '; -webkit-border-top-right-radius: 4px; -webkit-border-bottom-left-radius: 4px; -webkit-border-bottom-right-radius: 4px; border: 1px solid ' + color + ';">';
                 html += txt + '</div>';
-                html += "</div>";
 
-				TT.Views.Timeline.insertRowBefore(0, { html: html, json: row });
+				TT.Views.Timeline.insertRowBefore(0, { html: html, json: row, image: img, header:  username + ': ' + d + s  });
                 
             }
             /*

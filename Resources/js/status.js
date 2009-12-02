@@ -2,7 +2,7 @@
     TT.log('Loading Status: ' + Titanium.App.Properties.getString('currentStatus'));
 
     var stat = Titanium.App.Properties.getList('currentStatusList');
-    document.title = 'Titweeter: Status: ' + stat.name;
+    document.title = 'Titweeter: Status: ' + stat.user.name;
 
     YUI().use('node', function(Y) {
         Y.one('#status img').set('src', stat.user.profile_image_url);
