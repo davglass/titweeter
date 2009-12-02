@@ -4,6 +4,7 @@ var TT = {
     statuses: {},
     Views: {},
     lastID: null,
+    firstID: null,
     log: function(str) {
         Titanium.API.log('debug', str);
     },
@@ -16,12 +17,16 @@ var TT = {
     },
     proto: 'http',
     _loading: null,
-    showLoading: function(str) {
+    showLoading: function(str, bar) {
         TT.log('show loading indicator');
         str = ((str) ? str : 'Loading..');
         var ind = Titanium.UI.createActivityIndicator();
-        ind.setMessage(str);
-        ind.setLocation(Titanium.UI.ActivityIndicator.DIALOG)
+        if (bar) {
+            ind.setLocation(Titanium.UI.ActivityIndicator.STATUS_BAR)
+        } else {
+            ind.setMessage(str);
+            ind.setLocation(Titanium.UI.ActivityIndicator.DIALOG)
+        }
         ind.setType(Titanium.UI.ActivityIndicator.INDETERMINANT)
         ind.show();
         TT._loading = ind;
@@ -71,6 +76,7 @@ var TT = {
         days    : "X days ago"
     },
     showTimelineView: function(creds) {
+        TT.showLoading();
         TT.log('Found Login and Password');
         TT.log('Login: ' + creds.login);
         TT.log('Passwd: ' + creds.passwd);
@@ -91,6 +97,7 @@ var TT = {
                 if (!TT.lastID) {
                     TT.lastID = row.id;
                 }
+                TT.firstID = row.id;
             }
             for (var c = 0; c < json.length; c++) {
                 var row = json[c];
@@ -128,14 +135,18 @@ var TT = {
                 html += txt + '</div>';
                 html += "</div>";
 
-                data[c] = { html: html };
+                data[c] = { html: html, json: row };
             }
             var tableView = Titanium.UI.createTableView({ data: data, rowHeight: 90 },function (e) {
                 TT.log('TableView clicked..');
-
-                TT.log('currentStatus: ' + json[e.index].id);
-                Titanium.App.Properties.setString('currentStatus', json[e.index].id);
-                Titanium.App.Properties.setList('currentStatusList', json[e.index]);
+                TT.log('currentStatus: ' + e.rowData.json.id);
+                if (e.rowData.json.retweeted_status) {
+                    Titanium.App.Properties.setString('currentStatus', e.rowData.json.retweeted_status.id);
+                    Titanium.App.Properties.setList('currentStatusList', e.rowData.json.retweeted_status);
+                } else {
+                    Titanium.App.Properties.setString('currentStatus', e.rowData.json.id);
+                    Titanium.App.Properties.setList('currentStatusList', e.rowData.json);
+                }
                 
                 TT.log('Create status window..');
                 
@@ -157,40 +168,70 @@ var TT = {
         menu.addItem("Post", function() {
             var win = Titanium.UI.createWindow({ url: 'post.html' });
             win.open();
-        }, Titanium.UI.Android.SystemIcon.SHARE);
+        }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
 
         menu.addItem("Timeline", function() {
             TT.log('Menu: Timeline');
-        }, Titanium.UI.Android.SystemIcon.VIEW);
+        }/*, Titanium.UI.Android.SystemIcon.VIEW*/);
 
         menu.addItem("Mentions", function() {
             TT.log('Menu: Mentions');
-        }, Titanium.UI.Android.SystemIcon.ZOOM);
+        }/*, Titanium.UI.Android.SystemIcon.ZOOM*/);
 
         menu.addItem("Directs", function() {
             TT.log('Menu: Directs');
-        }, Titanium.UI.Android.SystemIcon.SEND);
+        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
 
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
-        }, Titanium.UI.Android.SystemIcon.SEARCH);
+        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
         menu.addItem("Options", function() {
             TT.log('Menu: Options');
             TT.showSettings();
-        }, Titanium.UI.Android.SystemIcon.PREFERENCES);
+        }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
 
         menu.addItem("Exit", function() {
             Titanium.App.exit();
             TT.log('Menu: EXIT');
-        }, Titanium.UI.Android.SystemIcon.CLOSE);
+        }/*, Titanium.UI.Android.SystemIcon.CLOSE*/);
 
         Titanium.UI.setMenu(menu);
+
+        Titanium.UI.currentWindow.addEventListener('focused', function(e) {
+            TT.log('Timeline focused');
+            TT.active = true;
+        });
+        Titanium.UI.currentWindow.addEventListener('unfocused', function(e) {
+            TT.log('Timeline unfocused');
+            TT.active = false;
+        });
     
+    },
+    active: true,
+    filterStatus: function(txt) {
+        //Filter URL's
+        txt = txt.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&\?\/.=]+/, function(url) {
+            return '<a href="' + url + '">' + url + '</a>';
+        });
+        
+        //Filter @messages
+        //Hook profile view up here..
+        txt = txt.replace(/[@]+[A-Za-z0-9-_]+/g, function(f, n, s) {
+            return '<a href="http:/'+'/twitter.com/' + f.replace('@', '') + '">' + f + '</a>';
+        });
+        
+        //Filter #hashtags
+        //Hook search view up here..
+        txt = txt.replace(/[#]+[A-Za-z0-9-_]+/g, function(f, n, s) {
+            return '<a href="http:/'+'/search.twitter.com/search?q=' + f.replace('#', '%23') + '">' + f + '</a>';
+        });
+        
+        return txt;
     },
     updateTimelines: function() {
         TT.log('updateTimelines: ' + new Date());
-        
+        TT.showLoading('reloading', true);
         var creds = TT.getCreds();
 
         var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/home_timeline.json?since_id=" + TT.lastID;
@@ -210,6 +251,7 @@ var TT = {
                     TT.lastID = row.id;
                     set = false;
                 }
+                TT.firstID = row.id;
             }
             for (var c = 0; c < json.length; c++) {
                 var row = json[c];
@@ -247,7 +289,7 @@ var TT = {
                 html += txt + '</div>';
                 html += "</div>";
 
-				TT.Views.Timeline.insertRowBefore(0, { html: html });
+				TT.Views.Timeline.insertRowBefore(0, { html: html, json: row });
                 
             }
             /*

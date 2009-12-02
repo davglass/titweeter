@@ -1,8 +1,24 @@
 
+    var val = '', buttonValue = 'Post';
+
+    var replyID = Titanium.App.Properties.getInt('replyID');
+    
+    TT.log('[POST]: replyID: ' + replyID);
+
+    if (replyID > 0) {
+        var replyName = Titanium.App.Properties.getString('replyTo');
+        TT.log('[POST]: replyName: ' + replyName);
+
+        Titanium.App.Properties.setString('replyTo', '');
+        Titanium.App.Properties.setInt('replyID', 0);
+        val = '@' + replyName + ' ';
+        document.title = 'Titweeter: Reply to @' + replyName;
+        buttonValue = 'Reply';
+    }
 
     var ta1 = Titanium.UI.createTextArea({
         id: 'post_status', 
-        value: '',
+        value: val,
         height: 100,
         width: 300,
         borderStyle: Titanium.UI.INPUT_BORDERSTYLE_BEZEL,
@@ -11,16 +27,18 @@
     
     var c = document.getElementById('charCount');
 
-    ta1.addEventListener('change', function(e) {
+
+    var countChars = function(e) {
         var len = e.value.length,
             left = (140 - len);
-        //TT.log('change: ' + len + ' :: ' + left);
         if (left < 0) {
             c.innerHTML = '<strong>' + left + '</strong> Chars left';
         } else {
             c.innerHTML = left + ' Chars left';
         }
-    });
+    };
+
+    ta1.addEventListener('change', countChars);
 
     ta1.addEventListener('return', function(e) {
         TT.log('return');
@@ -29,7 +47,7 @@
 
     var button = Titanium.UI.createButton({
         id: 'post_button',
-        title: 'Post',
+        title: buttonValue,
         color: '#000',
         height: 32,
         width: 75,
@@ -60,6 +78,11 @@
             status: ta1.value
         };
 
+        if (replyID > 0) {
+            TT.log('Reply to: ' + replyID);
+            c.in_reply_to_status_id = replyID;
+        }
+
         if (e.coords) {
             c.lat = e.coords.latitude;
             c.long = e.coords.longitude;
@@ -85,5 +108,5 @@
         //xhr.send(c);
     };
     
-    //ta1.focus();
+    ta1.focus();
     
