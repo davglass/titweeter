@@ -37,7 +37,7 @@
 			id:'textfield1',
 			value: login,
 			keyboardType:Titanium.UI.KEYBOARD_EMAIL,
-			hintText:'Twitter Username',
+			//hintText:'Twitter Username',
 			width: 170,
 			height: height,
 			clearOnEdit:true,
@@ -47,7 +47,7 @@
 			id:'textfield2',
 			value: passwd,
 			keyboardType: Titanium.UI.KEYBOARD_ASCII,
-			hintText: 'Twitter Password',
+			//hintText: 'Twitter Password',
 			width: 170,
 			height: height,
 			clearOnEdit: true,
@@ -76,31 +76,37 @@
 
 			var login = tf1.value,
 			    passwd = tf2.value,
+                creds = TT.getCreds(),
                 url = 'https:/'+'/' + login + ':' + passwd + '@twitter.com/account/verify_credentials.json',
                 xhr = Titanium.Network.createHTTPClient();
 
             if (login != '' && passwd != '') {
-                TT.log('Fetching URL: ' + url);
-                xhr.onload = function() {
-                    TT.log('Verify Creds');
-                    var json = eval('('+this.responseText+')');
-                    if (json.error) {
-                        TT.log('ERROR: ' + json.error);
-                        TT.showError(json.error);
-                    } else {
-                        TT.log('setCreds..');
-                        TT.setCreds(login, passwd);
-                        Titanium.UI.currentWindow.close();
-                        TT.showTimeline({
-                            login: login,
-                            passwd: passwd
-                        });
-                        
-                    }
-
-                };
-                xhr.open("GET",url);
-                xhr.send();
+                if (creds.login == login && creds.passwd == passwd) {
+                    Titanium.UI.currentWindow.close();
+                } else {
+                    TT.showLoading();
+                    TT.log('Fetching URL: ' + url);
+                    xhr.onload = function() {
+                        TT.log('Verify Creds');
+                        var json = eval('('+this.responseText+')');
+                        if (json.error) {
+                            TT.log('ERROR: ' + json.error);
+                            TT.showError(json.error);
+                        } else {
+                            TT.log('setCreds..');
+                            TT.setCreds(login, passwd);
+                            TT.hideLoading();
+                            Titanium.UI.currentWindow.close();
+                            TT.showTimeline({
+                                login: login,
+                                passwd: passwd
+                            });
+                            
+                        }
+                    };
+                    xhr.open("GET",url);
+                    xhr.send();
+                }
             } else {
                 TT.log('Show Error');
                 if (!login && !passwd) {

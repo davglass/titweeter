@@ -5,53 +5,25 @@
 	<body>
 		<script src="js/titweeter.js"></script>
         <script>
-            TT.log('Fetching from accounts');
-            var creds = TT.getCreds();
+        Titanium.UI.currentWindow.addEventListener('unfocused',function() {
+            TT.log('Timeline window unfocused');
+        });
+        Titanium.UI.currentWindow.addEventListener('focused',function() {
+            TT.log('Timeline window focused');
+        });
 
-            if (creds.login && creds.passwd) {
-                TT.log('Loading Timeline');
-                TT.showLoading();
-                TT.showTimelineView(creds);
-                
-                var menu = Titanium.UI.createMenu();
+        TT.log('Fetching from accounts');
+        var creds = TT.getCreds();
 
-                menu.addItem("Post", function() {
-                    TT.log('Menu: Post');
-                }, Titanium.UI.Android.SystemIcon.SHARE);
+        if (creds.login && creds.passwd) {
+            TT.log('Loading Timeline');
+            TT.showLoading();
+            TT.showTimelineView(creds);
+        } else {
+            TT.log('No Creds, loading login screen');
+            TT.showSettings();
+        }
 
-                menu.addItem("Timeline", function() {
-                    TT.log('Menu: Timeline');
-                }, Titanium.UI.Android.SystemIcon.VIEW);
-
-                menu.addItem("Mentions", function() {
-                    TT.log('Menu: Mentions');
-                }, Titanium.UI.Android.SystemIcon.ZOOM);
-
-                menu.addItem("Directs", function() {
-                    TT.log('Menu: Directs');
-                }, Titanium.UI.Android.SystemIcon.SEND);
-
-                menu.addItem("Search", function() {
-                    TT.log('Menu: Search');
-                }, Titanium.UI.Android.SystemIcon.SEARCH);
-
-                menu.addItem("Options", function() {
-                    TT.log('Menu: Options');
-                    TT.showSettings();
-                }, Titanium.UI.Android.SystemIcon.PREFERENCES);
-
-                menu.addItem("Exit", function() {
-                    TT.log('Menu: Close');
-                    Titanium.UI.currentWindow.close();
-                }, Titanium.UI.Android.SystemIcon.CLOSE);
-
-
-                Titanium.UI.setMenu(menu);
-
-            } else {
-                TT.log('No Creds, loading login screen');
-                TT.showSettings();
-            }
         </script>
 	</body>
 </html>

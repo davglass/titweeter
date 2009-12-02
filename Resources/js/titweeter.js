@@ -2,6 +2,8 @@ var TT = {
     db: null,
     users: {},
     statuses: {},
+    Views: {},
+    lastID: null,
     log: function(str) {
         Titanium.API.log('debug', str);
     },
@@ -73,8 +75,6 @@ var TT = {
         TT.log('Login: ' + creds.login);
         TT.log('Passwd: ' + creds.passwd);
 
-        var activityIndicator = Titanium.UI.createActivityIndicator();
-        Titanium.UI.currentWindow.setRightNavButton(activityIndicator);
         var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/home_timeline.json?count=50";
 
         TT.log('URL: ' + url);
@@ -88,6 +88,9 @@ var TT = {
                 var row = json[c];
                 TT.users[row.user.id] = row.user;
                 TT.statuses[row.id] = row;
+                if (!TT.lastID) {
+                    TT.lastID = row.id;
+                }
             }
             for (var c = 0; c < json.length; c++) {
                 var row = json[c];
@@ -141,12 +144,138 @@ var TT = {
             });
             Titanium.UI.currentWindow.addView(tableView);
             Titanium.UI.currentWindow.showView(tableView);
+            TT.Views.Timeline = tableView;
             TT.hideLoading();
+            TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
             
         };
         xhr.open("GET",url);
         xhr.send();
+
+        var menu = Titanium.UI.createMenu();
+
+        menu.addItem("Post", function() {
+            var win = Titanium.UI.createWindow({ url: 'post.html' });
+            win.open();
+        }, Titanium.UI.Android.SystemIcon.SHARE);
+
+        menu.addItem("Timeline", function() {
+            TT.log('Menu: Timeline');
+        }, Titanium.UI.Android.SystemIcon.VIEW);
+
+        menu.addItem("Mentions", function() {
+            TT.log('Menu: Mentions');
+        }, Titanium.UI.Android.SystemIcon.ZOOM);
+
+        menu.addItem("Directs", function() {
+            TT.log('Menu: Directs');
+        }, Titanium.UI.Android.SystemIcon.SEND);
+
+        menu.addItem("Search", function() {
+            TT.log('Menu: Search');
+        }, Titanium.UI.Android.SystemIcon.SEARCH);
+
+        menu.addItem("Options", function() {
+            TT.log('Menu: Options');
+            TT.showSettings();
+        }, Titanium.UI.Android.SystemIcon.PREFERENCES);
+
+        menu.addItem("Exit", function() {
+            Titanium.App.exit();
+            TT.log('Menu: EXIT');
+        }, Titanium.UI.Android.SystemIcon.CLOSE);
+
+        Titanium.UI.setMenu(menu);
     
+    },
+    updateTimelines: function() {
+        TT.log('updateTimelines: ' + new Date());
+        
+        var creds = TT.getCreds();
+
+        var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/home_timeline.json?since_id=" + TT.lastID;
+
+        TT.log('URL: ' + url);
+
+        var xhr = Titanium.Network.createHTTPClient(),
+            set = true;
+        xhr.onload = function() {
+            TT.log('XHR Loaded');
+            var json = eval('('+this.responseText+')');
+            for (var c = 0; c < json.length; c++) {
+                var row = json[c];
+                TT.users[row.user.id] = row.user;
+                TT.statuses[row.id] = row;
+                if (set) {
+                    TT.lastID = row.id;
+                    set = false;
+                }
+            }
+            for (var c = 0; c < json.length; c++) {
+                var row = json[c];
+                var color = (((c % 2) == 0) ? '#ccc' : '#eee');
+                var d = TT.toRelativeTime(new Date(row.created_at));
+                var s = row.source;
+                var div = document.createElement('div');
+                div.innerHTML = s;
+                var a = div.firstChild;
+                if (a.nodeName == 'A') {
+                    s = a.innerHTML;
+                }
+
+                s = ' from ' + s;
+                if (row.in_reply_to_status_id) {
+                    s = ' in reply to ' + row.in_reply_to_screen_name;
+                }
+ 
+                var username = row.user.name,
+                    img = row.user.profile_image_url,
+                    txt = row.text;
+                if (row.retweeted_status) {
+                    username = row.retweeted_status.user.name;
+                    img = row.retweeted_status.user.profile_image_url;
+                    txt = row.retweeted_status.text;
+                    s = ' retweeted by ' + row.user.name + ' ' + d;
+                    d = '';
+                }
+                
+
+                var html = '<div class="timeline_post" style="position: relative; color: black; font-size: 10px; height: 88px;">';
+                html += '<h2 style="font-weight: bold; font-size: 10px; color: #fff;">' + username + ': ' + d + s + '</h2>';
+                html += '<img src="' + img + '" style="height: 36px; width: 36px; position: absolute; top: 14px; left: 0;">';
+                html += '<div class="text" style="padding: 4px; position: absolute; top: 14px; left: 43px; font-size: 11px; background-color: ' + color + '; -webkit-border-top-right-radius: 4px; -webkit-border-bottom-left-radius: 4px; border: 1px solid ' + color + ';">';
+                html += txt + '</div>';
+                html += "</div>";
+
+				TT.Views.Timeline.insertRowBefore(0, { html: html });
+                
+            }
+            /*
+            var tableView = Titanium.UI.createTableView({ data: data, rowHeight: 90 },function (e) {
+                TT.log('TableView clicked..');
+
+                TT.log('currentStatus: ' + json[e.index].id);
+                Titanium.App.Properties.setString('currentStatus', json[e.index].id);
+                Titanium.App.Properties.setList('currentStatusList', json[e.index]);
+                
+                TT.log('Create status window..');
+                
+                var win = Titanium.UI.createWindow({ url: 'status.html' });
+                win.open();
+            });
+            Titanium.UI.currentWindow.addView(tableView);
+            Titanium.UI.currentWindow.showView(tableView);
+            TT.Views.Timeline = tableView;
+            */
+            TT.hideLoading();
+            //TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
+        };
+        xhr.open("GET",url);
+        xhr.send();
+
+
+
+
     },
     showSettings: function() {
         TT.log('TT.showSettings');
