@@ -1,16 +1,16 @@
 
     var val = '', buttonValue = 'Post';
 
-    var replyID = Titanium.App.Properties.getInt('replyID');
+    var replyID = Titanium.App.Properties.getString('replyID');
     
     TT.log('[POST]: replyID: ' + replyID);
 
-    if (replyID > 0) {
+    if (replyID !== '') {
         var replyName = Titanium.App.Properties.getString('replyTo');
         TT.log('[POST]: replyName: ' + replyName);
 
         Titanium.App.Properties.setString('replyTo', '');
-        Titanium.App.Properties.setInt('replyID', 0);
+        Titanium.App.Properties.setString('replyID', '');
         val = '@' + replyName + ' ';
         document.title = 'Titweeter: Reply to @' + replyName;
         buttonValue = 'Reply';
@@ -61,7 +61,7 @@
 
     var postStatus = function() {
         TT.log('Post Status: ' + ta1.value);
-        TT.showLoading('Posting...');
+        TT.showLoading('Getting Geo...');
         Titanium.Geolocation.getCurrentPosition(function(e) {
             TT.log('Coords: ' + e.coords.latitude + ' :: ' + e.coords.longitude);
             postStatusReal(e);
@@ -72,6 +72,7 @@
     };
 
     var postStatusReal = function(e) {
+        TT.showLoading('Posting Status...');
         TT.log('postStatusReal: ' + ta1.value);
         var creds = TT.getCreds();
         var c = {
@@ -100,11 +101,23 @@
             TT.hideLoading();
             Titanium.currentWindow.close();
         };
+        xhr.onerror = function() {
+            TT.log('Status Text: ' + this.getStatusText());
+            TT.log('Response: ' + this.getResponseText());
+        };
+        
         xhr.open('POST', url);
-        xhr.setRequestHeader('Content-Type','application/x-www-form-urlencoded');
-        //xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        //xhr.send("status=" + Titanium.Network.encodeURIComponent(ta1.value));
-        xhr.send("status=" + Titanium.Network.encodeURIComponent('This is a test.'));
+        TT.log('Using new SDK: Another SDK');
+        
+        var str = '';
+        for (var i in c) {
+            str += '&' + i + '=' + Titanium.Network.encodeURIComponent(c[i]);
+        }
+        TT.log('QS: ' + str);
+        xhr.send(str);
+        
+        
+        
         //xhr.send(c);
     };
     

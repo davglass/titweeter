@@ -67,9 +67,9 @@
     menu.addItem("Reply", function() {
         
         Titanium.App.Properties.setString('replyTo', stat.user.screen_name);
-        Titanium.App.Properties.setInt('replyID', parseInt(stat.id, 10));
+        Titanium.App.Properties.setString('replyID', stat.id);
         TT.log('Reply to: ' + stat.user.screen_name);
-        TT.log('Reply to: ' + parseInt(stat.id, 10));
+        TT.log('Reply to: ' + stat.id);
 
 
         

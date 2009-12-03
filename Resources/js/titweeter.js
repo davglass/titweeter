@@ -19,15 +19,20 @@ var TT = {
     _loading: null,
     showLoading: function(str, bar) {
         TT.log('show loading indicator');
+        var ind;
         str = ((str) ? str : 'Loading..');
-        var ind = Titanium.UI.createActivityIndicator();
+        if (TT._loading) {
+            ind = TT._loading
+        } else {
+            var ind = Titanium.UI.createActivityIndicator();
+        }
         if (bar) {
-            ind.setLocation(Titanium.UI.ActivityIndicator.STATUS_BAR)
+            ind.setLocation(Titanium.UI.ActivityIndicator.STATUS_BAR);
         } else {
             ind.setMessage(str);
-            ind.setLocation(Titanium.UI.ActivityIndicator.DIALOG)
+            ind.setLocation(Titanium.UI.ActivityIndicator.DIALOG);
         }
-        ind.setType(Titanium.UI.ActivityIndicator.INDETERMINANT)
+        ind.setType(Titanium.UI.ActivityIndicator.INDETERMINANT);
         ind.show();
         TT._loading = ind;
     },
