@@ -16,14 +16,32 @@
 
         Y.one('#status ul').append('<li class="status">' + txt + '</li>');
 
+        Y.delegate('click', function(e) {
+            var cls = e.currentTarget.get('className');
+            TT.log('[STATUS]: Click: ' + cls);
+            switch (cls) {
+                case 'profile':
+                    TT.showProfile({ id: e.currentTarget.get('href').replace('http:/'+'/twitter.com/', '') });
+                    e.halt();
+                    break;
+                case 'search':
+                    //TODO
+                    break;
+                case 'url':
+                    //TODO
+                    break;
+            }
+        }, '#status ul', 'a');
+
         if (stat.in_reply_to_status_id) {
-            Y.one('#status').append('<div id="button" style="margin-top: 30px;"></div>');
+            Y.one('#status').append('<div id="button"></div>');
 
             var button1 = Titanium.UI.createButton({
                 id: 'button',
                 title: 'in reply to @' + stat.in_reply_to_screen_name,
                 color: '#ffffff',
-                height: 25
+                backgroundColor: '#ccc',
+                height: 40
             });
             button1.addEventListener('click', function() {
                 TT.showLoading('fetching status', true);
@@ -92,11 +110,25 @@
     
     if (stat.favorited) {
         menu.addItem("Remove Favorite", function() {
-            TT.log('Menu: Direct Message');
+            TT.log('Menu: Remove Favorite');
+            TT.showLoading('Removing as Favorite', true);
+            TT.fetchURL('favorites/destroy/' + stat.id + '.json', {
+                stat: 'POST',
+                onload: function() {
+                    TT.hideLoading();
+                }
+            });
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
     } else {
         menu.addItem("Add Favorite", function() {
-            TT.log('Menu: Direct Message');
+            TT.log('Menu: Add Favorite');
+            TT.showLoading('Marking as Favorite', true);
+            TT.fetchURL('favorites/create/' + stat.id + '.json', {
+                type: 'POST',
+                onload: function() {
+                    TT.hideLoading();
+                }
+            });
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
     }
     menu.addItem("Report Spam", function() {

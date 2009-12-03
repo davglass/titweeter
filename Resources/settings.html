@@ -84,7 +84,7 @@
                 if (creds.login == login && creds.passwd == passwd) {
                     Titanium.UI.currentWindow.close();
                 } else {
-                    TT.showLoading();
+                    TT.showLoading('Verifing Credentials');
                     TT.log('Fetching URL: ' + url);
                     xhr.onload = function() {
                         TT.log('Verify Creds');

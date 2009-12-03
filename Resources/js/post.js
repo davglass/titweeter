@@ -5,12 +5,12 @@
     
     TT.log('[POST]: replyID: ' + replyID);
 
-    if (replyID !== '') {
+    if (replyID) {
         var replyName = Titanium.App.Properties.getString('replyTo');
         TT.log('[POST]: replyName: ' + replyName);
 
-        Titanium.App.Properties.setString('replyTo', '');
-        Titanium.App.Properties.setString('replyID', '');
+        Titanium.App.Properties.setString('replyTo', null);
+        Titanium.App.Properties.setString('replyID', null);
         val = '@' + replyName + ' ';
         document.title = 'Titweeter: Reply to @' + replyName;
         buttonValue = 'Reply';
@@ -27,6 +27,50 @@
     
     var c = document.getElementById('charCount');
 
+    var postStatusReal = function(e) {
+        TT.showLoading('Posting Status...');
+        TT.log('postStatusReal: ' + ta1.value);
+        var creds = TT.getCreds();
+        var c = {
+            status: ta1.value
+        };
+
+        if (replyID > 0) {
+            TT.log('Reply to: ' + replyID);
+            c.in_reply_to_status_id = replyID;
+        }
+
+        if (e && e.coords) {
+            c.lat = e.coords.latitude;
+            c.long = e.coords.longitude;
+        }
+
+        TT.fetchURL('statuses/update.json', {
+            type: 'POST',
+            data: c,
+            onload: function() {
+                TT.hideLoading();
+                Titanium.currentWindow.close();
+            },
+            onerror: function() {
+                TT.log('Status Text: ' + this.getStatusText());
+                TT.log('Response: ' + this.getResponseText());
+            }
+        });
+    };
+    
+
+    var postStatus = function() {
+        TT.log('Post Status: ' + ta1.value);
+        TT.showLoading('Getting Geo...');
+        Titanium.Geolocation.getCurrentPosition(function(e) {
+            TT.log('Coords: ' + e.coords.latitude + ' :: ' + e.coords.longitude);
+            postStatusReal(e);
+        }, function(e) {
+            TT.log('Coords Lookup Failed');
+            postStatusReal(e);
+        });
+    };
 
     var countChars = function(e) {
         var len = e.value.length,
@@ -59,67 +103,3 @@
         postStatus();
     });
 
-    var postStatus = function() {
-        TT.log('Post Status: ' + ta1.value);
-        TT.showLoading('Getting Geo...');
-        Titanium.Geolocation.getCurrentPosition(function(e) {
-            TT.log('Coords: ' + e.coords.latitude + ' :: ' + e.coords.longitude);
-            postStatusReal(e);
-        }, function(e) {
-            TT.log('Coords Failed');
-            postStatusReal(e);
-        });
-    };
-
-    var postStatusReal = function(e) {
-        TT.showLoading('Posting Status...');
-        TT.log('postStatusReal: ' + ta1.value);
-        var creds = TT.getCreds();
-        var c = {
-            status: ta1.value
-        };
-
-        if (replyID > 0) {
-            TT.log('Reply to: ' + replyID);
-            c.in_reply_to_status_id = replyID;
-        }
-
-        if (e.coords) {
-            c.lat = e.coords.latitude;
-            c.long = e.coords.longitude;
-        }
-
-        var url = 'https:/'+'/' + creds.login + ':' + creds.passwd + '@twitter.com/statuses/update.json';
-
-        TT.log('URL: ' + url);
-        var xhr = Titanium.Network.createHTTPClient();
-        xhr.onreadystatechange = function() {
-            TT.log('[' + this.readyState + ']');
-        };
-
-        xhr.onload = function() {
-            TT.hideLoading();
-            Titanium.currentWindow.close();
-        };
-        xhr.onerror = function() {
-            TT.log('Status Text: ' + this.getStatusText());
-            TT.log('Response: ' + this.getResponseText());
-        };
-        
-        xhr.open('POST', url);
-        TT.log('Using new SDK: Another SDK');
-        
-        var str = '';
-        for (var i in c) {
-            str += '&' + i + '=' + Titanium.Network.encodeURIComponent(c[i]);
-        }
-        TT.log('QS: ' + str);
-        xhr.send(str);
-        
-        
-        
-        //xhr.send(c);
-    };
-    
-    ta1.focus();
-    

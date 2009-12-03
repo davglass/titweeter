@@ -5,19 +5,12 @@
 	<body>
 		<script src="js/titweeter.js"></script>
         <script>
-        Titanium.UI.currentWindow.addEventListener('unfocused',function() {
-            TT.log('Timeline window unfocused');
-        });
-        Titanium.UI.currentWindow.addEventListener('focused',function() {
-            TT.log('Timeline window focused');
-        });
-
         TT.log('Fetching from accounts');
         var creds = TT.getCreds();
 
         if (creds.login && creds.passwd) {
             TT.log('Loading Timeline');
-            TT.showTimelineView(creds);
+            TT.showTimelineView();
         } else {
             TT.log('No Creds, loading login screen');
             TT.showSettings();
