@@ -139,7 +139,7 @@ var TT = {
         win.open();
     },
     createTimelineView: function(data, cb, layout_custom) {
-
+        
         var template = {
             selectedBackgroundColor: '#fff',
             backgroundColor: '#ffffff',
@@ -168,6 +168,88 @@ var TT = {
         return tableView;
     },
     holder: function() {},
+    showTimeline: function() {
+        TT.showLoading('Fetching Timeline..');
+
+        TT.fetchURL('statuses/home_timeline.json?count=50', {
+            onload: function() {
+                TT.showLoading('Parsing Timeline..');
+                TT.log('TimelineXHR Loaded');
+                var json = eval('(' + this.responseText + ')'),
+                    set = true, c = 0, row, info,
+                    data = [];
+
+                for (var c = 0; c < json.length; c++) {
+                    var row = json[c];
+                    if (!TT.lastID) {
+                        TT.lastID = row.id;
+                    }
+                    TT.firstID = row.id;
+                    info = TT.formatTimelineRow(row);
+                    data.push(info);
+                }
+                
+                TT.showLoading('Using YUI3 to load Timeline...');
+                TT.log('YUI().use()');
+
+                YUI().use('node', function(Y) {
+                    var tl = Y.one('body').append('<div id="timeline"><ul></ul></div>'),
+                        ul = Y.one('#timeline ul');
+
+                        Y.each(data, function(v) {
+                            var cls = '';
+                            if (v.message_me) {
+                                v.message = v.message_me;
+                                v.photo = v.photo_me;
+                                cls = ' class="mine"';
+                            }
+                            TT.log('Header: ' + v.header);
+                            var li = Y.Node.create('<li' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + v.message + '</div></li>');
+                            ul.append(li);
+                        });
+
+                        Y.delegate('click', function(e) {
+                        }, '#timeline', '');
+                });
+                TT.hideLoading();
+                TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
+
+                /*
+                var tableView = TT.createTimelineView(data, function(e) {
+                    TT.log('TableView clicked..');
+                    var name = e.layoutName,
+                        status = TT.getTrueStatus(e.rowData.json);
+
+                    if (name && (name == 'photo') || (name == 'photo_me')) {
+                        TT.log('Show Profile: ' + status.user.screen_name);
+                        TT.showProfile(status.user);
+                    } else {
+                        TT.log('currentStatus: ' + status.id);
+
+                        Titanium.App.Properties.setString('currentStatus', status.id);
+                        Titanium.App.Properties.setList('currentStatusList', status);
+
+                        TT.log('Create status window..');
+                        
+                        var win = Titanium.UI.createWindow({ url: 'status.html' });
+                        win.open();
+                    }
+                });
+
+                Titanium.UI.currentWindow.addView(tableView);
+                Titanium.UI.currentWindow.showView(tableView);
+                TT.hideLoading();
+                TT.Views.Timeline = tableView;
+                */
+            },
+            onerror: function() {
+                TT.log('Status Text: ' + this.getStatusText());
+                TT.log('Response: ' + this.getResponseText());
+            }
+        });
+        
+        TT.createTimelineMenu();
+    },
     showTimelineView: function() {
         TT.showLoading('Fetching Timeline..');
 
@@ -223,6 +305,9 @@ var TT = {
             }
         });
         
+        TT.createTimelineMenu();
+    },
+    createTimelineMenu: function() {
         var menu = Titanium.UI.createMenu();
 
         menu.addItem("Post", function() {
@@ -332,7 +417,7 @@ var TT = {
             onload: function() {
                 TT.log('TimelineUpdateXHR Loaded');
                 var json = eval('(' + this.responseText + ')'),
-                    set = true, c = 0, row, info;
+                    set = true, c = 0, row, info, data;
 
                 for (c = 0; c < json.length; c++) {
                     row = json[c];
@@ -342,8 +427,25 @@ var TT = {
                     }
                     TT.firstID = row.id;
                     info = TT.formatTimelineRow(row);
-				    TT.Views.Timeline.insertRowBefore(0, info);
+                    data.push(info);
+				    //TT.Views.Timeline.insertRowBefore(0, info);
                 }
+                YUI().use('node', function(Y) {
+                    var f = Y.one('#timeline ul li'),
+                        ul = Y.one('#timeline ul');
+
+                    Y.each(data, function(v) {
+                            var cls = '';
+                            if (v.message_me) {
+                                v.message = v.message_me;
+                                v.photo = v.photo_me;
+                                cls = ' class="mine"';
+                            }
+                            TT.log('Header: ' + v.header);
+                            var li = Y.Node.create('<li' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + v.message + '</div></li>');
+                            ul.insertBefore(li, f);
+                    });
+                });
                 TT.hideLoading();
             },
             onerror: function() {

@@ -62,20 +62,8 @@ html, body {
 }
 
 #timeline {
-    display: none;
     text-align: left;
     font-size: 11px;
-}
-
-#loading {
-    display: block;
-    width: 200px;
-    height: 50px;
-    color: #ccc;
-    background-image: url(progress.gif);
-    background-repeat: no-repeat;
-    padding-left: 18px;
-    font-weight: bold;
 }
 
 #timeline ul li {

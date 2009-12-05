@@ -1,17 +1,18 @@
 <html>
 	<head>
 		<title>Titweeter: Timeline</title>
+        <link rel="stylesheet" type="text/css" href="css/twitter.css">
 	</head>
 	<body>
+		<script src="js/yui3.js"></script>
 		<script src="js/titweeter.js"></script>
         <script>
         TT.log('Fetching from accounts');
-        TT.setCreds('', '');
         var creds = TT.getCreds(), login=false;
 
         if (creds.login && creds.passwd) {
             TT.log('Loading Timeline');
-            TT.showTimelineView();
+            TT.showTimeline();
         } else {
             TT.log('No Creds, loading login screen');
             TT.showSettings();
@@ -25,7 +26,7 @@
                 if (creds.login && creds.passwd) {
                     TT.log('We have creds, showing timeline.');
                     login = false;
-                    TT.showTimelineView();
+                    TT.showTimeline();
                 }
             }
         });
