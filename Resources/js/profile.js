@@ -1,4 +1,88 @@
+    var user_id = Titanium.App.Properties.getString('currentUser'),
+    userFound = false;
 
+    TT.log('Loading Profile Data: ' + user_id);
+
+    TT.showLoading('Fetching Statuses');
+
+    TT.fetchURL('statuses/user_timeline/' + user_id + '.json', {
+        onload: function() {
+            TT.log('Fetched user Statuses');
+            TT.showLoading('Parsing Statuses...');
+            var json = eval('(' + this.responseText + ')'),
+                set = true, c = 0, row, info,
+                data = [],
+                ul = Y.one('#status ul');
+
+            for (c = 0; c < json.length; c++) {
+                info = TT.formatTimelineRow(json[c]);
+                if (!userFound) {
+                    userFound = true;
+                    TT.formatProfileHeader(json[c].user);
+                    document.title += ': ' + json[c].user.name;
+                }
+                var txt = TT.filterStatus(info.message);
+
+                ul.append('<li id="' + info.id + '" class="status">' + txt + '</li>');
+            }
+            
+            /*
+            var tableView = TT.createTimelineView(data, function(e) {
+                TT.log('Status Clicked: ' + e.layoutName);
+                var status;
+                switch (e.layoutName) {
+                    case 'url':
+                        TT.log('Open URL: ' + e.rowData.url);
+                        Titanium.Platform.openURL(e.rowData.url);
+                        break;
+                    case 'message_nopic':
+                        status = TT.getTrueStatus(e.rowData.json);
+
+                        TT.log('currentStatus: ' + status.id);
+
+                        Titanium.App.Properties.setString('currentStatus', status.id);
+                        Titanium.App.Properties.setList('currentStatusList', status);
+
+                        TT.log('Create status window..');
+                        
+                        var win = Titanium.UI.createWindow({ url: 'status.html' });
+                        win.open();
+                        break;
+                }
+            });
+            */
+
+            TT.hideLoading();
+        }
+    });
+
+    Y.delegate('click', function(e) {
+        var cls = e.currentTarget.get('className'),
+        href = e.currentTarget.get('href');
+        TT.log('[STATUS]: Click: ' + cls);
+        switch (cls) {
+            case 'profile':
+                TT.showProfile({ id: href.replace('http:/'+'/twitter.com/', '') });
+                e.halt();
+                break;
+            case 'search':
+                //TODO
+                break;
+            case 'url':
+                if (href.indexOf('twitpic.com')) {
+                    TT.log('Found Twitpic URL');
+                    //Filter TwitPic
+                    var url = href.replace('http:/'+'/twitpic.com/', 'http:/'+'/twitpic.com/show/full/');
+                    TT.log('Twitpic URL: ' + url);
+                    TT.showImage(url);
+                    e.halt();
+                }
+                //TODO
+                break;
+        }
+    }, '#status ul', 'a');
+
+/* {{{
     var header = {
         photo: '',
         following: '',
@@ -88,3 +172,4 @@
             TT.hideLoading();
         }
     });
+}}} */

@@ -69,7 +69,7 @@ html, body {
 #timeline ul li {
     border-bottom: 1px solid #333;
     padding: 5px;
-    min-height: 50px;
+    height: 70px;
 }
 
 #timeline ul h2 {
@@ -96,7 +96,7 @@ html, body {
     -webkit-border-bottom-right-radius: 4px;
     margin-left: 40px;
     padding: 3px;
-
+    height: 60%;
 }
 
 #timeline ul li.mine .text {
@@ -133,7 +133,11 @@ html, body {
     height: 48px;
 }
 
-#status h1 {
+#status #hd {
+    font-size: 10px;
+}
+
+#status #hd h1 {
     font-weight: bold;
     font-size: 12px;
     display: block;
@@ -147,5 +151,9 @@ html, body {
 }
 #status .status:nth-child(2n+1) {
     background-color: #eee
+}
+
+#status #hd p {
+    margin: 5px 0 10px;
 }
 

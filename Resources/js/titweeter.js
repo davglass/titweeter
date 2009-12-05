@@ -168,6 +168,7 @@ var TT = {
         return tableView;
     },
     holder: function() {},
+    statuses: {},
     showTimeline: function() {
         TT.showLoading('Fetching Timeline..');
 
@@ -192,25 +193,38 @@ var TT = {
                 TT.showLoading('Using YUI3 to load Timeline...');
                 TT.log('YUI().use()');
 
-                YUI().use('node', function(Y) {
-                    var tl = Y.one('body').append('<div id="timeline"><ul></ul></div>'),
-                        ul = Y.one('#timeline ul');
+                var tl = Y.one('body').append('<div id="timeline"><ul></ul></div>'),
+                    ul = Y.one('#timeline ul');
 
-                        Y.each(data, function(v) {
-                            var cls = '';
-                            if (v.message_me) {
-                                v.message = v.message_me;
-                                v.photo = v.photo_me;
-                                cls = ' class="mine"';
-                            }
-                            TT.log('Header: ' + v.header);
-                            var li = Y.Node.create('<li' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + v.message + '</div></li>');
-                            ul.append(li);
-                        });
-
-                        Y.delegate('click', function(e) {
-                        }, '#timeline', '');
+                Y.each(data, function(v) {
+                    var cls = ((v.me) ? ' class="mine"' : '');
+                    TT.log('Header: ' + v.header);
+                    var li = Y.Node.create('<li id="' + v.id + '" ' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + v.message + '</div></li>');
+                    ul.append(li);
                 });
+
+                Y.delegate('click', function(e) {
+                    var id = e.currentTarget.get('parentNode.id'),
+                    status = TT.getTrueStatus(TT.statuses[id]);
+
+                    TT.log('Clicked on profile image: ' + id);
+                    TT.showProfile(status.user);
+                }, '#timeline', 'img');
+                
+                Y.delegate('click', function(e) {
+                    var id = e.currentTarget.get('parentNode.id'),
+                    status = TT.getTrueStatus(TT.statuses[id]);
+                    TT.log('currentStatus: ' + status.id);
+
+                    Titanium.App.Properties.setString('currentStatus', status.id);
+                    Titanium.App.Properties.setList('currentStatusList', status);
+
+                    TT.log('Create status window..');
+                    
+                    var win = Titanium.UI.createWindow({ url: 'status.html' });
+                    win.open();
+                }, '#timeline', 'div');
+                
                 TT.hideLoading();
                 TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
 
@@ -369,7 +383,8 @@ var TT = {
             div = document.createElement('div'),
             username = row.user.name,
             img = row.user.profile_image_url,
-            txt = row.text;
+            txt = row.text,
+            user = row.user;
 
         div.innerHTML = s;
         a = div.firstChild;
@@ -386,25 +401,32 @@ var TT = {
             username = row.retweeted_status.user.name;
             img = row.retweeted_status.user.profile_image_url;
             txt = row.retweeted_status.text;
+            user = row.retweeted_status.user;
             s = ' retweeted by ' + row.user.name + ' ' + d;
             d = '';
         }
         
 
         var info = {
+            id: row.id,
+            user: user,
+            user_id: user.id,
             message: txt,
             photo: img,
             header: username + ': ' + d + s,
-            json: row
+            json: row,
+            me: false
         };
  
         if (row.user.screen_name == TT.creds.login) {
-            info.message_me = info.message;
-            info.photo_me = info.photo;
-            delete info.photo;
-            delete info.message;
-
+            info.me = true;
+            //info.message_me = info.message;
+            //info.photo_me = info.photo;
+            //delete info.photo;
+            //delete info.message;
         }
+
+        TT.statuses[info.id] = info;
 
         return info;
         
@@ -417,7 +439,9 @@ var TT = {
             onload: function() {
                 TT.log('TimelineUpdateXHR Loaded');
                 var json = eval('(' + this.responseText + ')'),
-                    set = true, c = 0, row, info, data;
+                    set = true, c = 0, row, info, data = [],
+                    f = Y.one('#timeline ul li'),
+                    ul = Y.one('#timeline ul');
 
                 for (c = 0; c < json.length; c++) {
                     row = json[c];
@@ -427,25 +451,12 @@ var TT = {
                     }
                     TT.firstID = row.id;
                     info = TT.formatTimelineRow(row);
-                    data.push(info);
-				    //TT.Views.Timeline.insertRowBefore(0, info);
+                    var cls = ((info.me) ? ' class="mine"' : '');
+                    TT.log('Update Header: ' + info.header);
+                    var li = Y.Node.create('<li' + cls + '><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + info.message + '</div></li>');
+                    ul.insertBefore(li, f);
                 }
-                YUI().use('node', function(Y) {
-                    var f = Y.one('#timeline ul li'),
-                        ul = Y.one('#timeline ul');
 
-                    Y.each(data, function(v) {
-                            var cls = '';
-                            if (v.message_me) {
-                                v.message = v.message_me;
-                                v.photo = v.photo_me;
-                                cls = ' class="mine"';
-                            }
-                            TT.log('Header: ' + v.header);
-                            var li = Y.Node.create('<li' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + v.message + '</div></li>');
-                            ul.insertBefore(li, f);
-                    });
-                });
                 TT.hideLoading();
             },
             onerror: function() {
@@ -458,7 +469,32 @@ var TT = {
         TT.log('TT.showSettings');
         var win = Titanium.UI.createWindow({ url: 'settings.html', fullscreen: true });
         win.open();
+    },
+    formatProfileHeader: function(user) {
+        Y.one('#status img').set('src', user.profile_image_url).on('click', TT.showUserProfile);
+        Y.one('#status h1').set('innerHTML', user.name).on('click', TT.showUserProfile);
+        Y.one('#status h3').set('innerHTML', '@' + user.screen_name).on('click', TT.showUserProfile);
+        Y.one('#status em').set('innerHTML', user.followers_count);
+        Y.one('#status strong').set('innerHTML', user.friends_count);
+        if (user.url) {
+            Y.one('#status a').set('href', user.url).set('innerHTML', user.url).setStyle('display', '');
+        } else {
+            Y.one('#status a').setStyle('display', 'none');
+        }
+        Y.one('#status p').set('innerHTML', user.description);
+    },
+    showUserProfile: function(e) {
+        if (e) {
+            e.halt();
+        }
+        TT.showProfile({ id: stat.user.screen_name });
     }
+
 };
 
+var Y;
+
+YUI().use('*', function(Yc) {
+    Y = Yc;
+});
 
