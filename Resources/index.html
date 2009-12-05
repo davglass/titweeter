@@ -6,7 +6,8 @@
 		<script src="js/titweeter.js"></script>
         <script>
         TT.log('Fetching from accounts');
-        var creds = TT.getCreds();
+        TT.setCreds('', '');
+        var creds = TT.getCreds(), login=false;
 
         if (creds.login && creds.passwd) {
             TT.log('Loading Timeline');
@@ -14,7 +15,20 @@
         } else {
             TT.log('No Creds, loading login screen');
             TT.showSettings();
+            login=true;
         }
+
+        Titanium.UI.currentWindow.addEventListener('focused', function() {
+            if (login) {
+                TT.log('Timeline window focused after login');
+                var creds = TT.getCreds();
+                if (creds.login && creds.passwd) {
+                    TT.log('We have creds, showing timeline.');
+                    login = false;
+                    TT.showTimelineView();
+                }
+            }
+        });
 
         </script>
 	</body>

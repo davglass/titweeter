@@ -4,10 +4,17 @@
     var stat = Titanium.App.Properties.getList('currentStatusList');
     document.title = 'Titweeter: Status: ' + stat.user.name;
 
+    var showUserProfile = function(e) {
+        if (e) {
+            e.halt();
+        }
+        TT.showProfile({ id: stat.user.screen_name });
+    };
+
     YUI().use('node', function(Y) {
-        Y.one('#status img').set('src', stat.user.profile_image_url);
-        Y.one('#status h1').set('innerHTML', stat.user.name);
-        Y.one('#status h3').set('innerHTML', '@' + stat.user.screen_name);
+        Y.one('#status img').set('src', stat.user.profile_image_url).on('click', showUserProfile);
+        Y.one('#status h1').set('innerHTML', stat.user.name).on('click', showUserProfile);
+        Y.one('#status h3').set('innerHTML', '@' + stat.user.screen_name).on('click', showUserProfile);
         Y.one('#status em').set('innerHTML', stat.user.followers_count);
         Y.one('#status strong').set('innerHTML', stat.user.friends_count);
 
@@ -17,17 +24,26 @@
         Y.one('#status ul').append('<li class="status">' + txt + '</li>');
 
         Y.delegate('click', function(e) {
-            var cls = e.currentTarget.get('className');
+            var cls = e.currentTarget.get('className'),
+            href = e.currentTarget.get('href');
             TT.log('[STATUS]: Click: ' + cls);
             switch (cls) {
                 case 'profile':
-                    TT.showProfile({ id: e.currentTarget.get('href').replace('http:/'+'/twitter.com/', '') });
+                    TT.showProfile({ id: href.replace('http:/'+'/twitter.com/', '') });
                     e.halt();
                     break;
                 case 'search':
                     //TODO
                     break;
                 case 'url':
+                    if (href.indexOf('twitpic.com')) {
+                        TT.log('Found Twitpic URL');
+                        //Filter TwitPic
+                        var url = href.replace('http:/'+'/twitpic.com/', 'http:/'+'/twitpic.com/show/full/');
+                        TT.log('Twitpic URL: ' + url);
+                        TT.showImage(url);
+                        e.halt();
+                    }
                     //TODO
                     break;
             }
@@ -44,7 +60,7 @@
                 height: 40
             });
             button1.addEventListener('click', function() {
-                TT.showLoading('fetching status', true);
+                TT.showLoading('Fetching Status');
                 TT.log('Load New Status Window');
                 var creds = TT.getCreds();
                 var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/show/" + stat.in_reply_to_status_id + '.json';

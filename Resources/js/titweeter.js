@@ -43,6 +43,18 @@ var TT = {
         Titanium.App.Properties.setString('LOGIN', l);
         Titanium.App.Properties.setString('PASSWD', p);
     },
+    showImage: function(url) {
+        TT.log('showImage: ' + url);
+        var ImageWindow = Titanium.UI.createWindow({
+            url: url,
+            hideTabBar: 'true',
+            hideNavBar: 'true'
+        });
+        ImageWindow.open({
+            modal: true,
+            animated: true
+        });
+    },
     fetchURL: function(url, cb) {
         var creds = TT.getCreds(),
             xhr = Titanium.Network.createHTTPClient(),

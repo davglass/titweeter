@@ -50,7 +50,7 @@
             data: c,
             onload: function() {
                 TT.hideLoading();
-                Titanium.currentWindow.close();
+                Titanium.UI.currentWindow.close();
             },
             onerror: function() {
                 TT.log('Status Text: ' + this.getStatusText());
