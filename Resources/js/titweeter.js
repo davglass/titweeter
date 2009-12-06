@@ -198,7 +198,7 @@ var TT = {
 
                 Y.each(data, function(v) {
                     var cls = ((v.me) ? ' class="mine"' : '');
-                    TT.log('Header: ' + v.header);
+                    //TT.log('Header: ' + v.header);
                     var li = Y.Node.create('<li id="' + v.id + '" ' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + v.message + '</div></li>');
                     ul.append(li);
                 });
@@ -341,6 +341,11 @@ var TT = {
             TT.log('Menu: Directs');
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
 
+        menu.addItem("Friends", function() {
+            TT.log('Menu: Friends');
+            TT.showFriends();
+        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
+
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
@@ -356,6 +361,10 @@ var TT = {
         }/*, Titanium.UI.Android.SystemIcon.CLOSE*/);
 
         Titanium.UI.setMenu(menu);
+    },
+    showFriends: function() {
+        win = Titanium.UI.createWindow({ url: 'friends.html' });
+        win.open();
     },
     filterStatus: function(txt) {
         //Filter URL's
@@ -459,7 +468,7 @@ var TT = {
                     info = TT.formatTimelineRow(row);
                     var cls = ((info.me) ? ' class="mine"' : '');
                     TT.log('Update Header: ' + info.header);
-                    var li = Y.Node.create('<li' + cls + '><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + info.message + '</div></li>');
+                    var li = Y.Node.create('<li id="' + info.id + '" ' + cls + '><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + info.message + '</div></li>');
                     ul.insertBefore(li, f);
                 }
 
@@ -483,9 +492,7 @@ var TT = {
         Y.one('#status em').set('innerHTML', user.followers_count);
         Y.one('#status strong').set('innerHTML', user.friends_count);
         if (user.url) {
-            Y.one('#status a').set('href', user.url).set('innerHTML', user.url).setStyle('display', '');
-        } else {
-            Y.one('#status a').setStyle('display', 'none');
+            Y.one('#status a.url').set('href', user.url).set('innerHTML', user.url).removeClass('hidden');
         }
         Y.one('#status p').set('innerHTML', user.description);
     },

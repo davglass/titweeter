@@ -10,10 +10,12 @@
     TT.log('Status: ' + txt);
 
     if (stat.geo) {
-        Y.one('#status #hd').append('<br><a href="http:/'+'/maps.google.com/maps?q=' + stat.geo[0] + ',' + stat.geo[1] + '">See location on map</a>');
+        var geo = Y.one('#status a.geo');
+        geo.set('href', geo.get('href') + stat.geo[0] + ',' + stat.geo[1]);
+        geo.removeClass('hidden');
     }
 
-    Y.one('#status ul').append('<li class="status">' + txt + '</li>');
+    Y.one('#status ul').append('<li class="status"><h4>' + stat.header + '</h4>' + txt + '</li>');
 
     Y.delegate('click', function(e) {
         var cls = e.currentTarget.get('className'),

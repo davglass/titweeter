@@ -20,14 +20,17 @@
                     userFound = true;
                     TT.formatProfileHeader(json[c].user);
                     document.title += ': ' + json[c].user.name;
+
                     if (json[c].geo) {
-                        Y.one('#status #hd').append('<br><a href="geo:?' + json[c].geo.coordinates[0] + ',' + json[c].geo.coordinates[1] + '">See location on map</a>');
+                        var geo = Y.one('#status a.geo');
+                        geo.set('href', geo.get('href') + json[c].geo.coordinates[0] + ',' + json[c].geo.coordinates[1]);
+                        geo.removeClass('hidden');
                     }
                     
                 }
                 var txt = TT.filterStatus(info.message);
                 
-                ul.append('<li id="' + info.id + '" class="status">' + txt + '</li>');
+                ul.append('<li id="' + info.id + '" class="status"><h4>' + info.header + '</h4>' + txt + '</li>');
             }
             
             /*

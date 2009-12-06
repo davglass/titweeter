@@ -161,3 +161,51 @@ html, body {
     margin: 5px 0 10px;
 }
 
+#status #hd a.hidden {
+    display: none;
+}
+
+#status .status h4 {
+    font-size: 10px;
+    color: #fff;
+    background-color: #000;
+    margin: -4px -4px 0;
+    padding: 2px;
+    -webkit-border-top-left-radius: 4px;
+    -webkit-border-top-right-radius: 4px;
+}
+#status .status h4 img {
+    float: none;
+    height: 8px;
+    width: 8px;
+}
+
+#friends {
+    text-align: left;
+}
+
+#friends li img {
+    height: 36px;
+    width: 36px;
+    float: left;
+    margin: 2px;
+}
+
+#friends li {
+    background-color: #ccc;
+    color: #000;
+    font-weight: bold;
+    margin-bottom: 4px;
+    -webkit-border-radius: 4px;
+    padding: 4px;
+    height: 40px;
+}
+#friends li em {
+    padding-top: 10px;
+    margin-left: 3px;
+    float: left;
+    display: block;
+}
+#friends li:nth-child(2n+1) {
+    background-color: #eee
+}
