@@ -101,9 +101,24 @@
         win.open();
     }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
     
+    menu.addItem("Retweet", function() {
+        
+        Titanium.App.Properties.setString('retweetID', stat.id);
+        Titanium.App.Properties.setString('retweetStatus', 'RT @' + stat.user.screen_name + ' ' + stat.message);
+        TT.log('Retweet: ' + stat.id);
+        
+        var win = Titanium.UI.createWindow({ url: 'post.html' });
+        win.open();
+    }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
+    
     if (stat.user.following) {
         menu.addItem("Direct Message", function() {
             TT.log('Menu: Direct Message');
+            Titanium.App.Properties.setString('directTo', stat.user.screen_name);
+            TT.log('Direct Message To: ' + stat.user.screen_name);
+            
+            var win = Titanium.UI.createWindow({ url: 'post.html' });
+            win.open();
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
         menu.addItem("Unfollow", function() {
             TT.log('Menu: Unfollow');

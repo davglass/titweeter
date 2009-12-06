@@ -7,6 +7,7 @@ var TT = {
         Titanium.API.log('debug', str);
     },
     showError: function(str) {
+        TT.hideLoading();
         var a = Titanium.UI.createAlertDialog();
         a.setTitle('Error');
         a.setMessage(str);
@@ -68,13 +69,31 @@ var TT = {
             if (cb.data) {
                 o = TT.stringifyObject(cb.data);
             }
-            if (cb.onload) {
-                xhr.onload = cb.onload;
+            if (cb.onload) {    
+                xhr._cb = onload;
+                xhr.onload = function() {
+                    TT.log('responseText: ' + this.responseText);
+                    if (this.responseText == 'Bad Gateway') {
+                        TT.hideLoading();
+                        TT.showError('Fail Whale!!');
+                    } else {
+                        xhr._cb.apply(this);
+                    }
+                };
             }
-            if (cb.onerror) {
-                xhr.onerror = cb.onerror;
-            }
+            //if (cb.onerror) {
+            //    xhr.onerror = cb.onerror;
+            //}
         }
+
+        xhr.onerror = function() {
+            var err = this.getStatusText();
+            TT.log('[ERROR]: Status Text: ' + err);
+            if (err == 'Bad Gateway') {
+                err = 'Fail Whale';
+            }
+            TT.showError(err);
+        };
         
         TT.log('Method: ' + meth);
         TT.log('URL: ' + url);
@@ -329,8 +348,9 @@ var TT = {
             win.open();
         }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
 
-        menu.addItem("Timeline", function() {
-            TT.log('Menu: Timeline');
+        menu.addItem("Refresh", function() {
+            TT.log('Menu: Refresh Timeline');
+            TT.updateTimelines();
         }/*, Titanium.UI.Android.SystemIcon.VIEW*/);
 
         menu.addItem("Mentions", function() {
@@ -354,11 +374,6 @@ var TT = {
             TT.log('Menu: Options');
             TT.showSettings();
         }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
-
-        menu.addItem("Exit", function() {
-            TT.log('Menu: EXIT');
-            Titanium.currentWindow.close();
-        }/*, Titanium.UI.Android.SystemIcon.CLOSE*/);
 
         Titanium.UI.setMenu(menu);
     },
@@ -450,7 +465,11 @@ var TT = {
         TT.log('updateTimelines: ' + new Date());
         TT.showLoading('reloading', true);
         
-        TT.fetchURL('statuses/home_timeline.json?since_id=' + TT.lastID, {
+        var url = 'statuses/home_timeline.json?count=50';
+            if (TT.lastID) {
+                url = 'statuses/home_timeline.json?since_id=' + TT.lastID;
+            }
+        TT.fetchURL(url, {
             onload: function() {
                 TT.log('TimelineUpdateXHR Loaded');
                 var json = eval('(' + this.responseText + ')'),

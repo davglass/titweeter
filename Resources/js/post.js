@@ -1,9 +1,11 @@
 
-    var val = '', buttonValue = 'Post';
-
-    var replyID = Titanium.App.Properties.getString('replyID');
+    var val = '', buttonValue = 'Post',
+        replyID = Titanium.App.Properties.getString('replyID');
+        directTo = Titanium.App.Properties.getString('directTo'),
+        retweetID = Titanium.App.Properties.getString('retweetID');
     
     TT.log('[POST]: replyID: ' + replyID);
+    TT.log('[POST]: retweetID: ' + retweetID);
 
     if (replyID) {
         var replyName = Titanium.App.Properties.getString('replyTo');
@@ -14,6 +16,27 @@
         val = '@' + replyName + ' ';
         document.title = 'Titweeter: Reply to @' + replyName;
         buttonValue = 'Reply';
+    }
+
+    if (retweetID) {
+        var retweetStatus = Titanium.App.Properties.getString('retweetStatus'),
+            val = retweetStatus;
+        
+        TT.log('[POST]: retweetStatus: ' + val);
+
+        Titanium.App.Properties.setString('retweetID', null);
+        Titanium.App.Properties.setString('retweetStatus', null);
+        document.title = 'Titweeter: Retweet';
+        buttonValue = 'Retweet';
+    }
+
+    if (directTo) {
+        
+        TT.log('[POST]: directTo: ' + directTo);
+
+        Titanium.App.Properties.setString('directTo', null);
+        document.title = 'Titweeter: Direct Message to ' + directTo;
+        buttonValue = 'Direct Message';
     }
 
     var ta1 = Titanium.UI.createTextArea({
@@ -28,7 +51,6 @@
     var c = document.getElementById('charCount');
 
     var postStatusReal = function(e) {
-        TT.showLoading('Posting Status...');
         TT.log('postStatusReal: ' + ta1.value);
         var creds = TT.getCreds();
         var c = {
@@ -44,19 +66,57 @@
             c.lat = e.coords.latitude;
             c.long = e.coords.longitude;
         }
-
-        TT.fetchURL('statuses/update.json', {
-            type: 'POST',
-            data: c,
-            onload: function() {
-                TT.hideLoading();
-                Titanium.UI.currentWindow.close();
-            },
-            onerror: function() {
-                TT.log('Status Text: ' + this.getStatusText());
-                TT.log('Response: ' + this.getResponseText());
-            }
-        });
+        
+        TT.log('[RETWEET] : ' + retweetStatus);
+        TT.log('[TWEET] : ' + ta1.value);
+        if (directTo) {
+            TT.showLoading('Send Direct Message...');
+            TT.log('Sending Direct Message');
+            c.screen_name = directTo;
+            c.text = c.status;
+            delete c.status;
+            TT.fetchURL('direct_messages/new.json', {
+                type: 'POST',
+                data: c,
+                onload: function() {
+                    TT.hideLoading();
+                    Titanium.UI.currentWindow.close();
+                },
+                onerror: function() {
+                    TT.log('Status Text: ' + this.getStatusText());
+                    TT.log('Response: ' + this.getResponseText());
+                }
+            });
+        } else if (retweetStatus && (retweetStatus == ta1.value )) {
+            TT.showLoading('Posting Retweet...');
+            TT.log('Retweet status == textarea.value: Retweeting..');
+            TT.fetchURL('statuses/retweet/' + retweetID + '.json', {
+                type: 'POST',
+                data: c,
+                onload: function() {
+                    TT.hideLoading();
+                    Titanium.UI.currentWindow.close();
+                },
+                onerror: function() {
+                    TT.log('Status Text: ' + this.getStatusText());
+                    TT.log('Response: ' + this.getResponseText());
+                }
+            });
+        } else {
+            TT.showLoading('Posting Status...');
+            TT.fetchURL('statuses/update.json', {
+                type: 'POST',
+                data: c,
+                onload: function() {
+                    TT.hideLoading();
+                    Titanium.UI.currentWindow.close();
+                },
+                onerror: function() {
+                    TT.log('Status Text: ' + this.getStatusText());
+                    TT.log('Response: ' + this.getResponseText());
+                }
+            });
+        }
     };
     
 
@@ -102,4 +162,8 @@
     button.addEventListener('click', function() {
         postStatus();
     });
+
+    window.onload = function() {
+        countChars({ value: { length: val.length }});
+    }
 
