@@ -2,28 +2,27 @@ h1. Titweeter
 
 This is my first attempt at building a Titanium Mobile app.
 
-*Currently I can't figure out how to post a status*
-See this Gist: http://gist.github.com/246084
-This syntax doesn't work!!
-
 h2. Semi-Working
 
 * Timeline (with Updates)
 * View Status
 * Reply to Status (no posting see above)
 * Navigate to reply, then to next status, etc..
+* Status Posting
+* Reply Posting
+* Friends List
+* User Profile
+* Circular Status/Profile
+* Semi Internal Browser (@ == profile, twitpic loads image)
 
 h2. TODO
 
 * Refactor all code
-* Make Posting Work
 * Timeline older items
 * Settings Window
-* Profile Views
 * Interal Browser
 * Bit.ly support (shorten and expand)
 * Direct Messages
-* Friends List
 * Skinning
 * Icons
 * Twitpic
