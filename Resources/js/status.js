@@ -9,6 +9,10 @@
     var txt = TT.filterStatus(stat.message);
     TT.log('Status: ' + txt);
 
+    if (stat.geo) {
+        Y.one('#status #hd').append('<br><a href="geo:?' + stat.geo[0] + ',' + stat.geo[1] + '">See location on map</a>');
+    }
+
     Y.one('#status ul').append('<li class="status">' + txt + '</li>');
 
     Y.delegate('click', function(e) {

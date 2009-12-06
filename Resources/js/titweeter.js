@@ -415,7 +415,8 @@ var TT = {
             photo: img,
             header: username + ': ' + d + s,
             json: row,
-            me: false
+            me: false,
+            geo: false
         };
  
         if (row.user.screen_name == TT.creds.login) {
@@ -424,6 +425,11 @@ var TT = {
             //info.photo_me = info.photo;
             //delete info.photo;
             //delete info.message;
+        }
+
+        if (row.geo) {
+            info.geo = row.geo.coordinates;
+            info.header = info.header += ' <img src="css/map.gif">';
         }
 
         TT.statuses[info.id] = info;

@@ -87,7 +87,14 @@ html, body {
 #timeline ul li.mine img {
     float: right;
 }
-
+#timeline ul li h2 img,
+#timeline ul li.mine h2 img {
+    float: none;
+    height: 12px;
+    width: 12px;
+    position: relative;
+    top: 2px;
+}
 #timeline ul li .text {
     border: 1px solid #bbb;
     background-color: #bbb;
@@ -124,9 +131,6 @@ html, body {
 
 #status img {
     float: left;
-}
-
-#status img {
     margin: 6px;
     margin-top: 0;
     width: 48px;
