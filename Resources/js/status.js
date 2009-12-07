@@ -17,32 +17,6 @@
 
     Y.one('#status ul').append('<li class="status"><h4>' + stat.header + '</h4>' + txt + '</li>');
 
-    Y.delegate('click', function(e) {
-        var cls = e.currentTarget.get('className'),
-        href = e.currentTarget.get('href');
-        TT.log('[STATUS]: Click: ' + cls);
-        switch (cls) {
-            case 'profile':
-                TT.showProfile({ id: href.replace('http:/'+'/twitter.com/', '') });
-                e.halt();
-                break;
-            case 'search':
-                //TODO
-                break;
-            case 'url':
-                if (href.indexOf('twitpic.com')) {
-                    TT.log('Found Twitpic URL');
-                    //Filter TwitPic
-                    var url = href.replace('http:/'+'/twitpic.com/', 'http:/'+'/twitpic.com/show/full/');
-                    TT.log('Twitpic URL: ' + url);
-                    TT.showImage(url);
-                    e.halt();
-                }
-                //TODO
-                break;
-        }
-    }, '#status ul', 'a');
-
     if (stat.in_reply_to_status_id) {
         Y.one('#status').append('<div id="button"></div>');
 
@@ -80,14 +54,10 @@
             };
             xhr.open("GET",url);
             xhr.send();
-            
-            
         });
         
     }
         
-
-
     var menu = Titanium.UI.createMenu();
 
     menu.addItem("Reply", function() {
@@ -122,10 +92,28 @@
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
         menu.addItem("Unfollow", function() {
             TT.log('Menu: Unfollow');
+            TT.showLoading('Unfollowing ' + stat.user.name);
+            TT.fetchURL('friendships/destroy/' + stat.user.id + '.json', {
+                type: 'POST',
+                onload: function() {
+                    TT.hideLoading();
+                }
+            });
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
     } else {
         menu.addItem("Follow", function() {
             TT.log('Menu: Follow');
+            TT.showLoading('Following ' + stat.user.name);
+            TT.fetchURL('friendships/create/' + stat.user.id + '.json?follow=true', {
+                type: 'POST',
+                data: {
+                    follow: true
+                },
+                onload: function() {
+                    TT.hideLoading();
+                }
+            });
+            
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
     }
     
@@ -153,9 +141,12 @@
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
     }
     menu.addItem("Report Spam", function() {
-        TT.log('Menu: Direct Message');
+        TT.log('Menu: Report Spam');
+        TT.not('Report Spam');
     }/*, Titanium.UI.Android.SystemIcon.SEND*/);
 
-    Titanium.UI.setMenu(menu);
-    
+    var creds = TT.getCreds();
+    if (creds.login !== stat.user.screen_name) {
+        Titanium.UI.setMenu(menu);
+    }
 

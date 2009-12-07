@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><ti:app xmlns:ti="http://ti.appcelerator.org">
 <id>com.titweeter</id>
 <name>titweeter</name>
-<version>1.0</version>
+<version>1.0.0a</version>
 <icon>default_app_logo.png</icon>
 	<persistent-wifi>false</persistent-wifi>
 	<prerendered-icon>false</prerendered-icon>
@@ -19,5 +19,5 @@
         </window>
     </windows>
 <guid>3dc10d911135405aabc394e00325f5d9</guid>
-<property name="ti.android.google.map.api.key">0r-czfNnk5cmwKCkOHPrC9ubHJb0Cvj7O7ntmog</property>
+<name>titweeter</name>
 </ti:app>

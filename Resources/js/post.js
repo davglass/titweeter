@@ -1,14 +1,14 @@
 
     var val = '', buttonValue = 'Post',
-        replyID = Titanium.App.Properties.getString('replyID');
+        replyID = Titanium.App.Properties.getString('replyID'),
+        replyName = Titanium.App.Properties.getString('replyTo'),
         directTo = Titanium.App.Properties.getString('directTo'),
         retweetID = Titanium.App.Properties.getString('retweetID');
     
     TT.log('[POST]: replyID: ' + replyID);
     TT.log('[POST]: retweetID: ' + retweetID);
 
-    if (replyID) {
-        var replyName = Titanium.App.Properties.getString('replyTo');
+    if (replyID || replyName) {
         TT.log('[POST]: replyName: ' + replyName);
 
         Titanium.App.Properties.setString('replyTo', null);
@@ -54,6 +54,7 @@
         TT.log('postStatusReal: ' + ta1.value);
         var creds = TT.getCreds();
         var c = {
+            source: 'titweeter',
             status: ta1.value
         };
 

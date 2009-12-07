@@ -13,6 +13,13 @@ var TT = {
         a.setMessage(str);
         a.show(); 
     },
+    not: function(str) {
+        TT.hideLoading();
+        var a = Titanium.UI.createAlertDialog();
+        a.setTitle('Not Implemented Yet');
+        a.setMessage(str);
+        a.show(); 
+    },
     proto: 'http',
     _loading: null,
     showLoading: function(str, bar) {
@@ -70,14 +77,13 @@ var TT = {
                 o = TT.stringifyObject(cb.data);
             }
             if (cb.onload) {    
-                xhr._cb = onload;
+                //xhr._cb = cb.onload;
                 xhr.onload = function() {
-                    TT.log('responseText: ' + this.responseText);
                     if (this.responseText == 'Bad Gateway') {
                         TT.hideLoading();
                         TT.showError('Fail Whale!!');
                     } else {
-                        xhr._cb.apply(this);
+                        cb.onload.apply(this);
                     }
                 };
             }
@@ -218,7 +224,7 @@ var TT = {
                 Y.each(data, function(v) {
                     var cls = ((v.me) ? ' class="mine"' : '');
                     //TT.log('Header: ' + v.header);
-                    var li = Y.Node.create('<li id="' + v.id + '" ' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + v.message + '</div></li>');
+                    var li = Y.Node.create('<li id="' + v.id + '" ' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + TT.filterStatus(v.message) + '</div></li>');
                     ul.append(li);
                 });
 
@@ -246,91 +252,6 @@ var TT = {
                 
                 TT.hideLoading();
                 TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
-
-                /*
-                var tableView = TT.createTimelineView(data, function(e) {
-                    TT.log('TableView clicked..');
-                    var name = e.layoutName,
-                        status = TT.getTrueStatus(e.rowData.json);
-
-                    if (name && (name == 'photo') || (name == 'photo_me')) {
-                        TT.log('Show Profile: ' + status.user.screen_name);
-                        TT.showProfile(status.user);
-                    } else {
-                        TT.log('currentStatus: ' + status.id);
-
-                        Titanium.App.Properties.setString('currentStatus', status.id);
-                        Titanium.App.Properties.setList('currentStatusList', status);
-
-                        TT.log('Create status window..');
-                        
-                        var win = Titanium.UI.createWindow({ url: 'status.html' });
-                        win.open();
-                    }
-                });
-
-                Titanium.UI.currentWindow.addView(tableView);
-                Titanium.UI.currentWindow.showView(tableView);
-                TT.hideLoading();
-                TT.Views.Timeline = tableView;
-                */
-            },
-            onerror: function() {
-                TT.log('Status Text: ' + this.getStatusText());
-                TT.log('Response: ' + this.getResponseText());
-            }
-        });
-        
-        TT.createTimelineMenu();
-    },
-    showTimelineView: function() {
-        TT.showLoading('Fetching Timeline..');
-
-        TT.fetchURL('statuses/home_timeline.json?count=50', {
-            onload: function() {
-                TT.showLoading('Parsing Timeline..');
-                TT.log('TimelineXHR Loaded');
-                var json = eval('(' + this.responseText + ')'),
-                    set = true, c = 0, row, info,
-                    data = [];
-
-                for (var c = 0; c < json.length; c++) {
-                    var row = json[c];
-                    if (!TT.lastID) {
-                        TT.lastID = row.id;
-                    }
-                    TT.firstID = row.id;
-                    info = TT.formatTimelineRow(row);
-                    data.push(info);
-                }
-
-
-                var tableView = TT.createTimelineView(data, function(e) {
-                    TT.log('TableView clicked..');
-                    var name = e.layoutName,
-                        status = TT.getTrueStatus(e.rowData.json);
-
-                    if (name && (name == 'photo') || (name == 'photo_me')) {
-                        TT.log('Show Profile: ' + status.user.screen_name);
-                        TT.showProfile(status.user);
-                    } else {
-                        TT.log('currentStatus: ' + status.id);
-
-                        Titanium.App.Properties.setString('currentStatus', status.id);
-                        Titanium.App.Properties.setList('currentStatusList', status);
-
-                        TT.log('Create status window..');
-                        
-                        var win = Titanium.UI.createWindow({ url: 'status.html' });
-                        win.open();
-                    }
-                });
-
-                Titanium.UI.currentWindow.addView(tableView);
-                Titanium.UI.currentWindow.showView(tableView);
-                TT.hideLoading();
-                TT.Views.Timeline = tableView;
-                TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
             },
             onerror: function() {
                 TT.log('Status Text: ' + this.getStatusText());
@@ -355,10 +276,12 @@ var TT = {
 
         menu.addItem("Mentions", function() {
             TT.log('Menu: Mentions');
+            TT.not('Mentions');
         }/*, Titanium.UI.Android.SystemIcon.ZOOM*/);
 
         menu.addItem("Directs", function() {
             TT.log('Menu: Directs');
+            TT.not('Directs');
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
 
         menu.addItem("Friends", function() {
@@ -368,6 +291,7 @@ var TT = {
 
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
+            TT.not('Search');
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
         menu.addItem("Options", function() {
@@ -445,10 +369,6 @@ var TT = {
  
         if (row.user.screen_name == TT.creds.login) {
             info.me = true;
-            //info.message_me = info.message;
-            //info.photo_me = info.photo;
-            //delete info.photo;
-            //delete info.message;
         }
 
         if (row.geo) {
@@ -487,7 +407,7 @@ var TT = {
                     info = TT.formatTimelineRow(row);
                     var cls = ((info.me) ? ' class="mine"' : '');
                     TT.log('Update Header: ' + info.header);
-                    var li = Y.Node.create('<li id="' + info.id + '" ' + cls + '><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + info.message + '</div></li>');
+                    var li = Y.Node.create('<li id="' + info.id + '" ' + cls + '><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + TT.filterStatus(info.message) + '</div></li>');
                     ul.insertBefore(li, f);
                 }
 
@@ -529,4 +449,31 @@ var Y;
 YUI().use('*', function(Yc) {
     Y = Yc;
 });
+
+Y.delegate('click', function(e) {
+    var cls = e.currentTarget.get('className'),
+    href = e.currentTarget.get('href');
+    TT.log('[DELEGATE]: Click: ' + cls);
+    switch (cls) {
+        case 'profile':
+            TT.showProfile({ id: href.replace('http:/'+'/twitter.com/', '') });
+            e.halt();
+            break;
+        case 'search':
+            //TODO
+            break;
+        case 'url':
+            if (href.indexOf('twitpic.com') !== -1) {
+                TT.log('Found Twitpic URL');
+                //Filter TwitPic
+                var url = href.replace('http:/'+'/twitpic.com/', 'http:/'+'/twitpic.com/show/full/');
+                TT.log('Twitpic URL: ' + url);
+                TT.showImage(url);
+                e.halt();
+            }
+            //TODO
+            break;
+    }
+}, 'body', 'a');
+
 
