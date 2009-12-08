@@ -15,8 +15,9 @@ h2. Semi-Working
 * User Profile
 * Circular Status/Profile
 * Semi Internal Browser (@ == profile, twitpic loads image)
-* Twitpic Posting
+* Twitpic Posting from Gallery
 * Timeline Caching
+* Bit.ly support expand
 
 
 h2. TODO
@@ -26,12 +27,14 @@ h2. TODO
 * Menu Updates
 * Settings Window
 * Interal Browser
-* Bit.ly support (shorten and expand)
+* Bit.ly support shorten
 * Listing Direct Messages
 * Listing Mentions
+* Twitpic Posting from Camera
 * Search
 * Skinning
 * Icons
+* Background Process.. Titanium doesn't support it, but it needs a hack.
 * Anything else I can think of adding
 
 h2. Screenshot

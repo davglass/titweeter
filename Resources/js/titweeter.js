@@ -68,6 +68,10 @@ var TT = {
         });
     },
     fetchURL: function(url, cb) {
+        if (Titanium.Network.NETWORK_NONE) {
+            TT.showError('No network connection.');
+            return false;
+        }
         var creds = TT.getCreds(),
             xhr = Titanium.Network.createHTTPClient(),
             meth = 'GET', o = null,
@@ -132,23 +136,23 @@ var TT = {
 
         return creds;
     },
-    toRelativeTime: function(d,from) {
+    toRelativeTime: function(d, from) {
         d = d || new Date();
         from = from || new Date();
 
         var delta = (from.getTime() - d.getTime()) / 1000;
 
-        var str = delta < 5      ? TT.strings.now :
+        return delta < 5      ? TT.strings.now :
                delta < 60     ? TT.strings.seconds :
                delta < 120    ? TT.strings.minute :
-               delta < 3600   ? TT.strings.minutes.replace(/X/, Math.floor(delta/60)) :
+               delta < 3600   ? TT.strings.minutes.
+                                    replace(/X/, Math.floor(delta/60)) :
                delta < 7200   ? TT.strings.hour :
-               delta < 86400  ? TT.strings.hours.replace(/X/, Math.floor(delta/3600)) :
+               delta < 86400  ? TT.strings.hours.
+                                    replace(/X/, Math.floor(delta/3600)) :
                delta < 172800 ? TT.strings.day :
 
                TT.strings.days.replace(/X/, Math.floor(delta/86400));
-        //TT.log('Date: ' + str + ' :: ' + d + ' :: ' + from);
-        return str;
     },
     strings: {
         now     : "right now",
@@ -235,8 +239,6 @@ var TT = {
                 }
                 
                 TT.showLoading('Using YUI3 to load Timeline...');
-                TT.log('YUI().use()');
-
                 var ul = Y.one('#timeline ul');
 
                 Y.each(data, function(v) {
@@ -460,6 +462,7 @@ var TT = {
         Y.one('#status h3').set('innerHTML', '@' + user.screen_name).on('click', TT.showUserProfile);
         Y.one('#status em').set('innerHTML', user.followers_count);
         Y.one('#status strong').set('innerHTML', user.friends_count);
+        Y.one('#status span').set('innerHTML', user.statuses_count);
         if (user.url) {
             Y.one('#status a.url').set('href', user.url).set('innerHTML', user.url).removeClass('hidden');
         }
@@ -474,7 +477,11 @@ var TT = {
 
 };
 
-var Y;
+var Y,
+    bitly = {
+        username: 'davglass',
+        key: 'R_6c177964b29afb4bd3e40e14c1531ced'
+    };
 
 YUI().use('*', function(Yc) {
     Y = Yc;
@@ -482,9 +489,12 @@ YUI().use('*', function(Yc) {
 
 TT.getCreds();
 
+
 Y.delegate('click', function(e) {
-    var cls = e.currentTarget.get('className'),
-    href = e.currentTarget.get('href');
+    var tar = e.currentTarget,
+        cls = tar.get('className'),
+        href = tar.get('href');
+    
     TT.log('[DELEGATE]: Click: ' + cls);
     switch (cls) {
         case 'profile':
@@ -496,12 +506,36 @@ Y.delegate('click', function(e) {
             break;
         case 'url':
             if (href.indexOf('twitpic.com') !== -1) {
+                e.halt();
                 TT.log('Found Twitpic URL');
                 //Filter TwitPic
                 var url = href.replace('http:/'+'/twitpic.com/', 'http:/'+'/twitpic.com/show/full/');
                 TT.log('Twitpic URL: ' + url);
                 TT.showImage(url);
+            }
+            if (href.indexOf('bit.ly') !== -1) {
                 e.halt();
+                TT.log('Found Bitly URL');
+                TT.showLoading('Expanding Url');
+                var xhr = Titanium.Network.createHTTPClient();
+                xhr.onload = function() {
+                    TT.log('Bitly reponse: ' + this.responseText);
+                    var json = Y.JSON.parse(this.responseText);
+                    Y.each(json.results, function(v) {
+                        var url = v.longUrl;
+                        tar.set('href', url).set('innerHTML', url);
+                    });
+                    TT.hideLoading();
+                };
+                var o = TT.stringifyObject({
+                    login: bitly.username,
+                    apiKey: bitly.key,
+                    version: '2.0.1',
+                    format: 'json',
+                    shortUrl: href
+                });
+                xhr.open('GET', 'http:/'+'/api.bit.ly/expand?' + o);
+                xhr.send(null);
             }
             //TODO
             break;
@@ -517,15 +551,18 @@ Y.delegate('click', function(e) {
 }, '#timeline', 'img');
 
 Y.delegate('click', function(e) {
-    var id = e.currentTarget.get('parentNode.id'),
-    status = TT.getTrueStatus(TT.statuses[id]);
-    TT.log('currentStatus: ' + status.id);
+    if (!e.target.test('a')) {
+        var id = e.currentTarget.get('parentNode.id'),
+        status = TT.getTrueStatus(TT.statuses[id]);
+        TT.log('currentStatus: ' + status.id);
 
-    Titanium.App.Properties.setString('currentStatus', status.id);
-    Titanium.App.Properties.setList('currentStatusList', status);
+        Titanium.App.Properties.setString('currentStatus', status.id);
+        Titanium.App.Properties.setList('currentStatusList', status);
 
-    TT.log('Create status window..');
-    
-    var win = Titanium.UI.createWindow({ url: 'status.html' });
-    win.open();
-}, '#timeline', 'div');
+        TT.log('Create status window..');
+        
+        var win = Titanium.UI.createWindow({ url: 'status.html' });
+        win.open();
+    }
+}, 'body', 'div.text');
+

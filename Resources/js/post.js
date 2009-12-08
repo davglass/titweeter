@@ -56,9 +56,43 @@
 
     var postStatusReal = function(e) {
         TT.log('postStatusReal: ' + ta1.value);
-        var creds = TT.getCreds();
+        var creds = TT.getCreds(),
+            val = ta1.value;
+        
+        /*{{{ TODO - URL shortening
+        var urls = val.match(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&\?\/.=]+/g);
+        if (urls.length) {
+            TT.showLoading('Shortening URLs');
+            TT.log('Found (' + urls.length + ') URL, shorten them');
+            var xhr = Titanium.Network.createHTTPClient();
+            Y.each(urls, function(v) {
+                xhr.onload = function() {
+                    TT.log('Bitly reponse: ' + this.responseText);
+                    var json = Y.JSON.parse(this.responseText);
+                    Y.each(json.results, function(v) {
+                        var url = v.shortUrl;
+                        val.replace(v, url);
+                    });
+                    TT.hideLoading();
+                };
+                var o = TT.stringifyObject({
+                    login: bitly.username,
+                    apiKey: bitly.key,
+                    version: '2.0.1',
+                    format: 'json',
+                    longUrl: v
+                });
+                xhr.open('GET', 'http:/'+'/api.bit.ly/shorten?' + o);
+                xhr.send(null);
+            });
+        }
+        ta1.value = val;
+        TT.log('After shorten: ' + val);
+        return;
+        }}} */
+        
         var c = {
-            status: ta1.value
+            status: val
         };
 
         if (replyID > 0) {
@@ -149,27 +183,6 @@
 
     ta1.addEventListener('change', countChars);
     
-    //ta1.on('keypress', countChars);
-
-    /*
-    var button = Y.one('#post_button');
-    button.set('innerHTML', buttonValue);
-    
-    button.on('click', function() {
-        var val = ta1.get('value');
-        if (val.length > 0) {
-            postStatus();
-        } else {
-            TT.showError('You must have a status.');
-        }
-    });
-    */
-    /*
-    ta1.addEventListener('return', function(e) {
-        TT.log('return');
-        postStatus();
-    });
-    */
     var button = Titanium.UI.createButton({
         id: 'post_button',
         title: buttonValue,
