@@ -6,26 +6,29 @@ h2. Semi-Working
 
 * Timeline (with Updates)
 * View Status
-* Reply to Status (no posting see above)
+* Reply to Status
 * Navigate to reply, then to next status, etc..
 * Status Posting
 * Reply Posting
+* Direct Message Posting
 * Friends List
 * User Profile
 * Circular Status/Profile
 * Semi Internal Browser (@ == profile, twitpic loads image)
+* Twitpic
+
 
 h2. TODO
 
 * Refactor all code
-* Timeline older items
 * Settings Window
 * Interal Browser
 * Bit.ly support (shorten and expand)
-* Direct Messages
+* Listing Direct Messages
+* Listing Mentions
+* Search
 * Skinning
 * Icons
-* Twitpic
 * Anything else I can think of adding
 
 h2. Screenshot

@@ -30,13 +30,17 @@ html, body {
 }
 
 #post_button {
-    background-color: #ccc;
     margin-right: 10px;
-    margin-top: -20px;
+    margin-top: -25px;
     padding: 4px;
-    color: black;
-    font-size: 12px;
-    -webkit-border-radius: 4px;
+    width: 75px;
+    float: right;
+}
+
+#attach_button {
+    margin-right: 100px;
+    margin-top: -25px;
+    padding: 4px;
     width: 75px;
     float: right;
 }
@@ -209,7 +213,7 @@ html, body {
     height: 40px;
 }
 #friends li em {
-    padding-top: 10px;
+    padding-top: 5px;
     margin-left: 3px;
     float: left;
     display: block;

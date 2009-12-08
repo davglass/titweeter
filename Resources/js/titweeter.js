@@ -1,5 +1,6 @@
 var db = Titanium.Database.open('titweeter');
-db.execute('create table if not exists tweets (id integer, screen_name text, json text)');
+//db.execute('drop table tweets');
+db.execute('create table if not exists tweets (id integer, screen_name text, type text, json text)');
 
 //db.execute('delete from tweets');
 
@@ -98,8 +99,13 @@ var TT = {
         xhr.onerror = function() {
             var err = this.getStatusText();
             TT.log('[ERROR]: Status Text: ' + err);
-            if (err == 'Bad Gateway') {
-                err = 'Fail Whale';
+            switch (err) {
+                case 'Bad Gateway':
+                    err = 'Fail Whale';
+                    break;
+                case undefined:
+                    err = 'Twitter failed to load.';
+                    break;
             }
             TT.showError(err);
         };
@@ -172,7 +178,7 @@ var TT = {
     statuses: {},
     showTimeline: function() {
         TT.showLoading('Fetching Timeline Cache..');
-        var rows = db.execute('select * from tweets order by id desc'), 
+        var rows = db.execute('select * from tweets where (type = "timeline") order by id desc'), 
             v;
 
         TT.log('Loading ' + rows.getRowCount() + ' items from cache');
@@ -204,7 +210,8 @@ var TT = {
         TT.hideLoading();
 
         TT.createTimelineMenu();
-        TT.updateTimelines();
+        //TT.updateTimelines();
+        window.setTimeout(TT.updateTimelines, 200);
         TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
     },
     showTimeline_new: function() {
@@ -224,7 +231,7 @@ var TT = {
                         TT.lastID = row.id;
                     }
                     TT.firstID = row.id;
-                    info = TT.formatTimelineRow(row);
+                    info = TT.formatTimelineRow(row, 'timeline');
                     data.push(info);
                 }
                 
@@ -297,7 +304,7 @@ var TT = {
     },
     filterStatus: function(txt) {
         //Filter URL's
-        txt = txt.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&\?\/.=]+/, function(url) {
+        txt = txt.replace(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&\?\/.=]+/g, function(url) {
             return '<a href="' + url + '" class="url">' + url + '</a>';
         });
         
@@ -315,7 +322,7 @@ var TT = {
         
         return txt;
     },
-    formatTimelineRow: function(row) {
+    formatTimelineRow: function(row, cache) {
         var d = '<em>' + TT.toRelativeTime(new Date(row.created_at)) + '</em>',
             s = row.source, a,
             div = document.createElement('div'),
@@ -344,7 +351,6 @@ var TT = {
             d = '';
         }
         
-
         var info = {
             id: row.id,
             created_at: row.created_at,
@@ -357,6 +363,12 @@ var TT = {
             me: false,
             geo: false
         };
+
+        Y.each(row, function(v, k) {
+            if (!info[k]) {
+                info[k] = v;
+            }
+        });
  
         if (row.user.screen_name == TT.creds.login) {
             info.me = true;
@@ -368,19 +380,21 @@ var TT = {
         }
         
         if (!TT.statuses[row.id]) {
-            TT.statuses[row.id] = Y.clone(row);
+            TT.statuses[row.id] = info;
         }
-
+        
+        if (!cache) {
+            cache = 'status';
+        }
         var rows = db.execute('select * from tweets where (id = ' + info.id + ')');
         if (rows.isValidRow()) {
             rows.next();
         } else {
-            var sql = 'insert into tweets (id, screen_name, json) values (?, ?, ?)';
+            var sql = 'insert into tweets (id, screen_name, type, json) values (?, ?, ?, ?)';
             //TT.log('SQL: ' + sql);
-            db.execute(sql, info.id, info.user.screen_name, Titanium._JSON(row));
+            db.execute(sql, info.id, info.user.screen_name, cache, Titanium._JSON(row));
         }
         rows.close();
-
 
         return info;
         
@@ -410,7 +424,7 @@ var TT = {
                         set = false;
                     }
                     TT.firstID = row.id;
-                    info = TT.formatTimelineRow(row);
+                    info = TT.formatTimelineRow(row, 'timeline');
                     var cls = ((info.me) ? ' class="mine"' : '');
                     TT.log('Update Header: ' + info.header);
                     var li = Y.Node.create('<li id="' + info.id + '" ' + cls + '><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + TT.filterStatus(info.message) + '</div></li>');
@@ -466,6 +480,8 @@ var Y;
 YUI().use('*', function(Yc) {
     Y = Yc;
 });
+
+TT.getCreds();
 
 Y.delegate('click', function(e) {
     var cls = e.currentTarget.get('className'),

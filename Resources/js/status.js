@@ -1,12 +1,12 @@
 
     TT.log('Loading Status: ' + Titanium.App.Properties.getString('currentStatus'));
 
-    var stat = Titanium.App.Properties.getList('currentStatusList');
+    var stat = TT.formatTimelineRow(Titanium.App.Properties.getList('currentStatusList'));
     document.title = 'Titweeter: Status: ' + stat.user.name;
 
     TT.formatProfileHeader(stat.user);
 
-    var txt = TT.filterStatus(stat.message);
+    var txt = TT.filterStatus(stat.text);
     TT.log('Status: ' + txt);
 
     if (stat.geo) {
@@ -18,10 +18,8 @@
     Y.one('#status ul').append('<li class="status"><h4>' + stat.header + '</h4>' + txt + '</li>');
 
     if (stat.in_reply_to_status_id) {
-        Y.one('#status').append('<div id="button"></div>');
-
         var button1 = Titanium.UI.createButton({
-            id: 'button',
+            id: 'reply_button',
             title: 'in reply to @' + stat.in_reply_to_screen_name,
             color: '#ffffff',
             backgroundColor: '#ccc',
@@ -30,34 +28,47 @@
         button1.addEventListener('click', function() {
             TT.showLoading('Fetching Status');
             TT.log('Load New Status Window');
-            var creds = TT.getCreds();
-            var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/show/" + stat.in_reply_to_status_id + '.json';
+            TT.log('Checking Status Cache');
+            var rows = db.execute('select * from tweets where (id = ' + stat.in_reply_to_status_id + ')');
+            if (rows.isValidRow()) {
+                TT.log('Found Status in Cache');
+                json = Y.JSON.parse(rows.fieldByName('json'));
+                showStatus(json);
+                rows.next();
+            } else {
+                var creds = TT.getCreds();
+                var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/show/" + stat.in_reply_to_status_id + '.json';
 
-            TT.log('URL: ' + url);
+                TT.log('URL: ' + url);
 
-            var xhr = Titanium.Network.createHTTPClient();
-            xhr.onload = function() {
-                var json = eval('('+this.responseText+')');
-                if (json.retweeted_status) {
-                    Titanium.App.Properties.setString('currentStatus', json.retweeted_status.id);
-                    Titanium.App.Properties.setList('currentStatusList', json.retweeted_status);
-                } else {
-                    Titanium.App.Properties.setString('currentStatus', json.id);
-                    Titanium.App.Properties.setList('currentStatusList', json);
-                }
-                TT.hideLoading();
-                
-                TT.log('Create status window..');
-                var win = Titanium.UI.createWindow({ url: 'status.html' });
-                win.open();
-                
-            };
-            xhr.open("GET",url);
-            xhr.send();
+                var xhr = Titanium.Network.createHTTPClient();
+                xhr.onload = function() {
+                    var json = eval('('+this.responseText+')');
+                    showStatus(json);
+                };
+                xhr.open("GET",url);
+                xhr.send();
+            }
         });
         
     }
+ 
+    var showStatus = function(json) {
+        TT.log('Opening Status Window');
+        if (json.retweeted_status) {
+            Titanium.App.Properties.setString('currentStatus', json.retweeted_status.id);
+            Titanium.App.Properties.setList('currentStatusList', json.retweeted_status);
+        } else {
+            Titanium.App.Properties.setString('currentStatus', json.id);
+            Titanium.App.Properties.setList('currentStatusList', json);
+        }
+        TT.hideLoading();
         
+        TT.log('Create status window..');
+        var win = Titanium.UI.createWindow({ url: 'status.html' });
+        win.open();
+    };
+
     var menu = Titanium.UI.createMenu();
 
     menu.addItem("Reply", function() {

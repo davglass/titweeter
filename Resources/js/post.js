@@ -39,25 +39,26 @@
         buttonValue = 'Direct Message';
     }
     
-    /*
+    
     var ta1 = Titanium.UI.createTextArea({
         id: 'post_status', 
         value: val,
-        height: 100,
-        width: 300,
+        //height: 100,
+        //width: 300,
+        autocorrect: true,
         borderStyle: Titanium.UI.INPUT_BORDERSTYLE_BEZEL,
         returnKeyType: Titanium.UI.RETURNKEY_SEND
     });
-    */
-    var ta1 = Y.one('#post_status');
-    ta1.set('value', val);
+    
+    //var ta1 = Y.one('#post_status');
+    //ta1.set('value', val);
     
 
     var postStatusReal = function(e) {
-        TT.log('postStatusReal: ' + ta1.get('value'));
+        TT.log('postStatusReal: ' + ta1.value);
         var creds = TT.getCreds();
         var c = {
-            status: ta1.get('value')
+            status: ta1.value
         };
 
         if (replyID > 0) {
@@ -71,7 +72,7 @@
         }
         
         TT.log('[RETWEET] : ' + retweetStatus);
-        TT.log('[TWEET] : ' + ta1.get('value'));
+        TT.log('[TWEET] : ' + ta1.value);
         if (directTo) {
             TT.showLoading('Send Direct Message...');
             TT.log('Sending Direct Message');
@@ -90,7 +91,7 @@
                     TT.log('Response: ' + this.getResponseText());
                 }
             });
-        } else if (retweetStatus && (retweetStatus == ta1.get('value') )) {
+        } else if (retweetStatus && (retweetStatus == ta1.value)) {
             TT.showLoading('Posting Retweet...');
             TT.log('Retweet status == textarea.value: Retweeting..');
             TT.fetchURL('statuses/retweet/' + retweetID + '.json', {
@@ -124,7 +125,7 @@
     
 
     var postStatus = function() {
-        TT.log('Post Status: ' + ta1.get('value'));
+        TT.log('Post Status: ' + ta1.value);
         TT.showLoading('Getting Geo...');
         Titanium.Geolocation.getCurrentPosition(function(e) {
             TT.log('Coords: ' + e.coords.latitude + ' :: ' + e.coords.longitude);
@@ -137,7 +138,7 @@
 
     var cCount = Y.one('#charCount');
     var countChars = function(e) {
-        var len = e.target.get('value').length,
+        var len = e.value.length,
             left = (140 - len);
         if (left < 0) {
             cCount.set('innerHTML', '<strong>' + left + '</strong> Chars left');
@@ -146,11 +147,11 @@
         }
     };
 
-    //ta1.addEventListener('change', countChars);
+    ta1.addEventListener('change', countChars);
     
-    ta1.on('keypress', countChars);
+    //ta1.on('keypress', countChars);
 
-
+    /*
     var button = Y.one('#post_button');
     button.set('innerHTML', buttonValue);
     
@@ -162,13 +163,13 @@
             TT.showError('You must have a status.');
         }
     });
-    
+    */
     /*
     ta1.addEventListener('return', function(e) {
         TT.log('return');
         postStatus();
     });
-
+    */
     var button = Titanium.UI.createButton({
         id: 'post_button',
         title: buttonValue,
@@ -182,9 +183,54 @@
     button.addEventListener('click', function() {
         postStatus();
     });
-    */
+    
+    var pic_button = Titanium.UI.createButton({
+        id: 'attach_button',
+        title: 'TwitPic',
+        color: '#000',
+        height: 32,
+        width: 75,
+        fontSize: 12,
+        fontWeight: 'bold'
+    });
+    
+    pic_button.addEventListener('click', function() {
+        Titanium.Media.openPhotoGallery({
+            success: function(image, details) {
+                TT.showLoading('Posting Image...');
+                TT.log('Image From Gallery');
+                var creds = TT.getCreds();
+                var xhr = Titanium.Network.createHTTPClient();
+                xhr.onload = function() {
+                    TT.log('XHR Loaded: ' + this.responseText);
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(this.responseText, "text/xml"); 
+                    var rsp = doc.getElementsByTagName('mediaurl')[0];
+                    TT.log('URL: ' + rsp.firstChild.nodeValue);
+                    ta1.value += ' ' + rsp.firstChild.nodeValue;
+                    TT.hideLoading();
+                    ta1.focus();
+                };
+                xhr.open('POST', 'http:/'+'/twitpic.com/api/upload');
+                xhr.send({
+                    media: image,
+                    username: creds.login,
+                    password: creds.passwd
+                });
+            },
+            error: function(e) {
+                TT.showError(e.message);
+            },
+            cancel: function() {
+                TT.log('Cancel Gallery');
+                //no op
+            },
+            allowImageEditing: true
+        }); 
+    });
+    
 
     window.onload = function() {
-        countChars({ target: ta1 });
+        countChars({ value: { length: val.length} });
     };
 

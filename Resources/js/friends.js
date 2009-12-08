@@ -8,14 +8,16 @@
             TT.showLoading('Parsing Friends List');
             var json = eval('(' + this.responseText + ')');
             Y.each(json, function(v) {
-                friends[v.name] = v;
-                ids[v.id] = v.name;
-                sorter.push(v.name);
+                friends[v.name.toLowerCase()] = v;
+                ids[v.id] = v.name.toLowerCase();
+                sorter.push(v.name.toLowerCase());
             });
+            TT.log(Y.JSON.stringify(sorter));
             sorter.sort();
+            TT.log(Y.JSON.stringify(sorter));
             Y.each(sorter, function(v) {
                 var info = friends[v];
-                ul.append('<li id="' + info.id + '"><img src="' + info.profile_image_url + '" align="left"> <em>' + info.name + ' @' + info.screen_name + '</em></li>');
+                ul.append('<li id="' + info.id + '"><img src="' + info.profile_image_url + '" align="left"> <em>' + info.name + '<br>@' + info.screen_name + '</em></li>');
             });
             TT.hideLoading();
         }
