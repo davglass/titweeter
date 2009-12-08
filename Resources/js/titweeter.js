@@ -81,7 +81,6 @@ var TT = {
                 o = TT.stringifyObject(cb.data);
             }
             if (cb.onload) {    
-                //xhr._cb = cb.onload;
                 xhr.onload = function() {
                     if (this.responseText == 'Bad Gateway') {
                         TT.hideLoading();
@@ -91,9 +90,6 @@ var TT = {
                     }
                 };
             }
-            //if (cb.onerror) {
-            //    xhr.onerror = cb.onerror;
-            //}
         }
 
         xhr.onerror = function() {
@@ -108,6 +104,9 @@ var TT = {
                     break;
             }
             TT.showError(err);
+            if (cb.onerror) {
+                cb.onerror.apply(this);
+            }
         };
         
         TT.log('Method: ' + meth);
