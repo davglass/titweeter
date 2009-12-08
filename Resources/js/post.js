@@ -38,7 +38,8 @@
         document.title = 'Titweeter: Direct Message to ' + directTo;
         buttonValue = 'Direct Message';
     }
-
+    
+    /*
     var ta1 = Titanium.UI.createTextArea({
         id: 'post_status', 
         value: val,
@@ -47,14 +48,16 @@
         borderStyle: Titanium.UI.INPUT_BORDERSTYLE_BEZEL,
         returnKeyType: Titanium.UI.RETURNKEY_SEND
     });
+    */
+    var ta1 = Y.one('#post_status');
+    ta1.set('value', val);
     
-    var c = document.getElementById('charCount');
 
     var postStatusReal = function(e) {
-        TT.log('postStatusReal: ' + ta1.value);
+        TT.log('postStatusReal: ' + ta1.get('value'));
         var creds = TT.getCreds();
         var c = {
-            status: ta1.value
+            status: ta1.get('value')
         };
 
         if (replyID > 0) {
@@ -68,7 +71,7 @@
         }
         
         TT.log('[RETWEET] : ' + retweetStatus);
-        TT.log('[TWEET] : ' + ta1.value);
+        TT.log('[TWEET] : ' + ta1.get('value'));
         if (directTo) {
             TT.showLoading('Send Direct Message...');
             TT.log('Sending Direct Message');
@@ -87,7 +90,7 @@
                     TT.log('Response: ' + this.getResponseText());
                 }
             });
-        } else if (retweetStatus && (retweetStatus == ta1.value )) {
+        } else if (retweetStatus && (retweetStatus == ta1.get('value') )) {
             TT.showLoading('Posting Retweet...');
             TT.log('Retweet status == textarea.value: Retweeting..');
             TT.fetchURL('statuses/retweet/' + retweetID + '.json', {
@@ -121,7 +124,7 @@
     
 
     var postStatus = function() {
-        TT.log('Post Status: ' + ta1.value);
+        TT.log('Post Status: ' + ta1.get('value'));
         TT.showLoading('Getting Geo...');
         Titanium.Geolocation.getCurrentPosition(function(e) {
             TT.log('Coords: ' + e.coords.latitude + ' :: ' + e.coords.longitude);
@@ -132,18 +135,35 @@
         });
     };
 
+    var cCount = Y.one('#charCount');
     var countChars = function(e) {
-        var len = e.value.length,
+        var len = e.target.get('value').length,
             left = (140 - len);
         if (left < 0) {
-            c.innerHTML = '<strong>' + left + '</strong> Chars left';
+            cCount.set('innerHTML', '<strong>' + left + '</strong> Chars left');
         } else {
-            c.innerHTML = left + ' Chars left';
+            cCount.set('innerHTML', left + ' Chars left');
         }
     };
 
-    ta1.addEventListener('change', countChars);
+    //ta1.addEventListener('change', countChars);
+    
+    ta1.on('keypress', countChars);
 
+
+    var button = Y.one('#post_button');
+    button.set('innerHTML', buttonValue);
+    
+    button.on('click', function() {
+        var val = ta1.get('value');
+        if (val.length > 0) {
+            postStatus();
+        } else {
+            TT.showError('You must have a status.');
+        }
+    });
+    
+    /*
     ta1.addEventListener('return', function(e) {
         TT.log('return');
         postStatus();
@@ -162,8 +182,9 @@
     button.addEventListener('click', function() {
         postStatus();
     });
+    */
 
     window.onload = function() {
-        countChars({ value: { length: val.length }});
-    }
+        countChars({ target: ta1 });
+    };
 

@@ -12,16 +12,6 @@ html, body {
     background-color: #000;
 }
 
-#post_status {
-    height: 100px;
-}
-
-#post_button {
-    position: absolute;
-    top: 107px;
-    right: 85px;
-}
-
 #charCount {
     background-color: #ccc;
     margin-top: 10px;
@@ -31,6 +21,24 @@ html, body {
     font-size: 10px;
     -webkit-border-radius: 4px;
     width: 75px;
+}
+
+#post_status {
+    width: 90%;
+    height: 150px;
+    -webkit-border-radius: 4px;
+}
+
+#post_button {
+    background-color: #ccc;
+    margin-right: 10px;
+    margin-top: -20px;
+    padding: 4px;
+    color: black;
+    font-size: 12px;
+    -webkit-border-radius: 4px;
+    width: 75px;
+    float: right;
 }
 
 #charCount strong {
