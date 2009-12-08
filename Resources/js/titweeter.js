@@ -1,6 +1,9 @@
+var db = Titanium.Database.open('titweeter');
+db.execute('create table if not exists tweets (id integer, screen_name text, json text)');
+
+//db.execute('delete from tweets');
+
 var TT = {
-    db: null,
-    Views: {},
     lastID: null,
     firstID: null,
     log: function(str) {
@@ -130,7 +133,7 @@ var TT = {
 
         var delta = (from.getTime() - d.getTime()) / 1000;
 
-        return delta < 5      ? TT.strings.now :
+        var str = delta < 5      ? TT.strings.now :
                delta < 60     ? TT.strings.seconds :
                delta < 120    ? TT.strings.minute :
                delta < 3600   ? TT.strings.minutes.replace(/X/, Math.floor(delta/60)) :
@@ -139,6 +142,8 @@ var TT = {
                delta < 172800 ? TT.strings.day :
 
                TT.strings.days.replace(/X/, Math.floor(delta/86400));
+        //TT.log('Date: ' + str + ' :: ' + d + ' :: ' + from);
+        return str;
     },
     strings: {
         now     : "right now",
@@ -163,38 +168,46 @@ var TT = {
         win = Titanium.UI.createWindow({ url: 'profile.html' });
         win.open();
     },
-    createTimelineView: function(data, cb, layout_custom) {
-        
-        var template = {
-            selectedBackgroundColor: '#fff',
-            backgroundColor: '#ffffff',
-            rowHeight: 50,
-            layout: [
-                { type: 'image', left: 5, top: 5, width: 36, height: 36, name: 'photo' },
-                { type: 'text', fontSize: 11, fontWeight: 'normal', left: 49, right: 4, top: 3, color: '#222', name: 'message' },
-                { type: 'image', right: 5, top: 5, width: 36, height: 36, name: 'photo_me' },
-                { type: 'text', fontSize: 11, fontWeight: 'normal', right: 50, left: 2, top: 3, color: '#222', name: 'message_me' },
-                { type: 'text', fontSize: 11, fontWeight: 'normal', left: 3, right: 4, top: 3, color: '#222', name: 'message_nopic' }                 
-            ]
-        };
-        if (layout_custom && layout_custom.length) {
-            TT.log('Found Custom Layout, Applying..');
-            for (var i in layout_custom) {
-                template.layout.push(layout_custom[i]);
-            }
-        }
-
-        var tableView = Titanium.UI.createTableView({
-            template: template,
-            data: data,
-            rowHeight: 60
-        }, cb);
-
-        return tableView;
-    },
     holder: function() {},
     statuses: {},
     showTimeline: function() {
+        TT.showLoading('Fetching Timeline Cache..');
+        var rows = db.execute('select * from tweets order by id desc'), 
+            v;
+
+        TT.log('Loading ' + rows.getRowCount() + ' items from cache');
+        
+        if (rows.getRowCount() == 0) {
+            TT.showTimeline_new();
+            return;
+        }
+
+        var ul = Y.one('#timeline ul');
+        
+        while (rows.isValidRow()) {
+            //TT.log('Loading Cache: ' + rows.fieldByName('id') + ' :: ' + rows.fieldByName('screen_name'));
+            v = TT.formatTimelineRow(Y.JSON.parse(rows.fieldByName('json')));
+            var cls = ((v.me) ? ' class="mine"' : '');
+            var li = Y.Node.create('<li id="' + v.id + '" ' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + TT.filterStatus(v.message) + '</div></li>');
+            ul.append(li);
+            
+            if (!TT.lastID) {
+                TT.lastID = v.id;
+            }
+            TT.firstID = v.id;
+            rows.next();
+            TT.statuses[v.id] = v;
+        }
+        // close database
+        rows.close();
+
+        TT.hideLoading();
+
+        TT.createTimelineMenu();
+        TT.updateTimelines();
+        TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
+    },
+    showTimeline_new: function() {
         TT.showLoading('Fetching Timeline..');
 
         TT.fetchURL('statuses/home_timeline.json?count=50', {
@@ -218,8 +231,7 @@ var TT = {
                 TT.showLoading('Using YUI3 to load Timeline...');
                 TT.log('YUI().use()');
 
-                var tl = Y.one('body').append('<div id="timeline"><ul></ul></div>'),
-                    ul = Y.one('#timeline ul');
+                var ul = Y.one('#timeline ul');
 
                 Y.each(data, function(v) {
                     var cls = ((v.me) ? ' class="mine"' : '');
@@ -227,28 +239,6 @@ var TT = {
                     var li = Y.Node.create('<li id="' + v.id + '" ' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + TT.filterStatus(v.message) + '</div></li>');
                     ul.append(li);
                 });
-
-                Y.delegate('click', function(e) {
-                    var id = e.currentTarget.get('parentNode.id'),
-                    status = TT.getTrueStatus(TT.statuses[id]);
-
-                    TT.log('Clicked on profile image: ' + id);
-                    TT.showProfile(status.user);
-                }, '#timeline', 'img');
-                
-                Y.delegate('click', function(e) {
-                    var id = e.currentTarget.get('parentNode.id'),
-                    status = TT.getTrueStatus(TT.statuses[id]);
-                    TT.log('currentStatus: ' + status.id);
-
-                    Titanium.App.Properties.setString('currentStatus', status.id);
-                    Titanium.App.Properties.setList('currentStatusList', status);
-
-                    TT.log('Create status window..');
-                    
-                    var win = Titanium.UI.createWindow({ url: 'status.html' });
-                    win.open();
-                }, '#timeline', 'div');
                 
                 TT.hideLoading();
                 TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
@@ -326,7 +316,7 @@ var TT = {
         return txt;
     },
     formatTimelineRow: function(row) {
-        var d = TT.toRelativeTime(new Date(row.created_at)),
+        var d = '<em>' + TT.toRelativeTime(new Date(row.created_at)) + '</em>',
             s = row.source, a,
             div = document.createElement('div'),
             username = row.user.name,
@@ -357,6 +347,7 @@ var TT = {
 
         var info = {
             id: row.id,
+            created_at: row.created_at,
             user: user,
             user_id: user.id,
             message: txt,
@@ -375,8 +366,21 @@ var TT = {
             info.geo = row.geo.coordinates;
             info.header = info.header += ' <img src="css/map.gif">';
         }
+        
+        if (!TT.statuses[row.id]) {
+            TT.statuses[row.id] = Y.clone(row);
+        }
 
-        TT.statuses[info.id] = info;
+        var rows = db.execute('select * from tweets where (id = ' + info.id + ')');
+        if (rows.isValidRow()) {
+            rows.next();
+        } else {
+            var sql = 'insert into tweets (id, screen_name, json) values (?, ?, ?)';
+            //TT.log('SQL: ' + sql);
+            db.execute(sql, info.id, info.user.screen_name, Titanium._JSON(row));
+        }
+        rows.close();
+
 
         return info;
         
@@ -384,6 +388,8 @@ var TT = {
     updateTimelines: function() {
         TT.log('updateTimelines: ' + new Date());
         TT.showLoading('reloading', true);
+        
+        TT.updateTimeStamps();
         
         var url = 'statuses/home_timeline.json?count=50';
             if (TT.lastID) {
@@ -417,6 +423,17 @@ var TT = {
                 TT.log('Status Text: ' + this.getStatusText());
                 TT.log('Response: ' + this.getResponseText());
             }
+        });
+    },
+    updateTimeStamps: function() {
+        TT.log('update time stamps');
+        var ems = Y.all('#timeline em');
+        TT.log('Updating ' + ems.size() + ' stamps');
+        ems.each(function(v) {
+            var id = v.get('parentNode.parentNode.id');
+            //TT.log(Y.JSON.stringify(TT.statuses[id]));
+            var str = TT.toRelativeTime(new Date(TT.statuses[id].created_at));
+            v.set('innerHTML', str);
         });
     },
     showSettings: function() {
@@ -476,4 +493,24 @@ Y.delegate('click', function(e) {
     }
 }, 'body', 'a');
 
+Y.delegate('click', function(e) {
+    var id = e.currentTarget.get('parentNode.id'),
+    status = TT.getTrueStatus(TT.statuses[id]);
 
+    TT.log('Clicked on profile image: ' + id);
+    TT.showProfile(status.user);
+}, '#timeline', 'img');
+
+Y.delegate('click', function(e) {
+    var id = e.currentTarget.get('parentNode.id'),
+    status = TT.getTrueStatus(TT.statuses[id]);
+    TT.log('currentStatus: ' + status.id);
+
+    Titanium.App.Properties.setString('currentStatus', status.id);
+    Titanium.App.Properties.setList('currentStatusList', status);
+
+    TT.log('Create status window..');
+    
+    var win = Titanium.UI.createWindow({ url: 'status.html' });
+    win.open();
+}, '#timeline', 'div');

@@ -54,7 +54,6 @@
         TT.log('postStatusReal: ' + ta1.value);
         var creds = TT.getCreds();
         var c = {
-            source: 'titweeter',
             status: ta1.value
         };
 
