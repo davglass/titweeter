@@ -2,6 +2,7 @@
     var creds = TT.getCreds(),
     friends = {}, sorter = [], ids = [],
     ul = Y.one('ul');
+    Titanium.Analytics.featureEvent('show.friends');
 
     TT.fetchURL('statuses/friends/' + creds.login + '.json', {
         onload: function() {

@@ -93,15 +93,12 @@
                             TT.log('ERROR: ' + json.error);
                             TT.showError(json.error);
                         } else {
+                            Titanium.Analytics.featureEvent('settings.creds'); 
+                            db.execute('delete from tweets');
                             TT.log('setCreds..');
                             TT.setCreds(login, passwd);
                             TT.hideLoading();
                             Titanium.UI.currentWindow.close();
-                            TT.showTimeline({
-                                login: login,
-                                passwd: passwd
-                            });
-                            
                         }
                     };
                     xhr.open("GET",url);

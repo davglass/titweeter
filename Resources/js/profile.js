@@ -2,6 +2,7 @@
     userFound = false;
 
     TT.log('Loading Profile Data: ' + user_id);
+    Titanium.Analytics.featureEvent('show.profile');
 
     TT.showLoading('Fetching Statuses');
 

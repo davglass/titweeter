@@ -4,6 +4,8 @@
     var stat = TT.formatTimelineRow(Titanium.App.Properties.getList('currentStatusList'));
     document.title = 'Titweeter: Status: ' + stat.user.name;
 
+    TT.showTimeline_new('show.status');
+
     TT.formatProfileHeader(stat.user);
 
     var txt = TT.filterStatus(stat.text);
