@@ -2,7 +2,7 @@ var db = Titanium.Database.open('titweeter');
 //db.execute('drop table tweets');
 db.execute('create table if not exists tweets (id integer, screen_name text, type text, json text)');
 
-//db.execute('delete from tweets');
+db.execute('delete from tweets');
 
 var TT = {
     lastID: null,
@@ -217,10 +217,12 @@ var TT = {
         window.setTimeout(TT.updateTimelines, 200);
         TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
     },
-    showTimeline_new: function() {
-        TT.showLoading('Fetching Timeline..');
+    showTimeline_new: function(t) {
+        t = ((t) ? t : 'home_timeline');
+        cache = ((t) ? t : 'timeline');
 
-        TT.fetchURL('statuses/home_timeline.json?count=50', {
+        TT.showLoading('Fetching Timeline.. ' + t);
+        TT.fetchURL('statuses/' + t + '.json?count=50', {
             onload: function() {
                 TT.showLoading('Parsing Timeline..');
                 TT.log('TimelineXHR Loaded');
@@ -234,7 +236,7 @@ var TT = {
                         TT.lastID = row.id;
                     }
                     TT.firstID = row.id;
-                    info = TT.formatTimelineRow(row, 'timeline');
+                    info = TT.formatTimelineRow(row, cache);
                     data.push(info);
                 }
                 
@@ -249,7 +251,9 @@ var TT = {
                 });
                 
                 TT.hideLoading();
-                TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
+                if (t === 'home_timeline') {
+                    TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
+                }
             },
             onerror: function() {
                 TT.log('Status Text: ' + this.getStatusText());
@@ -257,7 +261,55 @@ var TT = {
             }
         });
         
-        TT.createTimelineMenu();
+        switch (t) {
+            case 'mentions':
+                TT.createMentionsMenu();
+                break;
+            default:
+                Titanium.Analytics.featureEvent('new timeline');
+                TT.createTimelineMenu();
+                break;
+        }
+    },
+    createMentionsMenu: function() {
+        var menu = Titanium.UI.createMenu();
+
+        menu.addItem("Post", function() {
+            win = Titanium.UI.createWindow({ url: 'post.html' });
+            win.open();
+        }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
+
+        menu.addItem("Refresh", function() {
+            TT.log('Menu: Refresh Timeline');
+            TT.updateTimelines('mentions');
+        }/*, Titanium.UI.Android.SystemIcon.VIEW*/);
+
+        menu.addItem("Timeline", function() {
+            TT.log('Menu: Timeline');
+            Titanium.UI.currentWindow.close();
+        }/*, Titanium.UI.Android.SystemIcon.ZOOM*/);
+
+        menu.addItem("Directs", function() {
+            TT.log('Menu: Directs');
+            TT.not('Directs');
+        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
+
+        menu.addItem("Friends", function() {
+            TT.log('Menu: Friends');
+            TT.showFriends();
+        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
+
+        menu.addItem("Search", function() {
+            TT.log('Menu: Search');
+            TT.not('Search');
+        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
+
+        menu.addItem("Options", function() {
+            TT.log('Menu: Options');
+            TT.showSettings();
+        }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
+
+        Titanium.UI.setMenu(menu);
     },
     createTimelineMenu: function() {
         var menu = Titanium.UI.createMenu();
@@ -274,7 +326,8 @@ var TT = {
 
         menu.addItem("Mentions", function() {
             TT.log('Menu: Mentions');
-            TT.not('Mentions');
+            win = Titanium.UI.createWindow({ url: 'mentions.html' });
+            win.open();
         }/*, Titanium.UI.Android.SystemIcon.ZOOM*/);
 
         menu.addItem("Directs", function() {
@@ -302,6 +355,10 @@ var TT = {
     showFriends: function() {
         win = Titanium.UI.createWindow({ url: 'friends.html' });
         win.open();
+    },
+    showMentions: function() {
+        Titanium.Analytics.featureEvent('show.mentions');
+        TT.showTimeline_new('mentions');
     },
     filterStatus: function(txt) {
         //Filter URL's
@@ -400,15 +457,17 @@ var TT = {
         return info;
         
     },
-    updateTimelines: function() {
+    updateTimelines: function(t) {
         TT.log('updateTimelines: ' + new Date());
         TT.showLoading('reloading', true);
         
+        t = ((t) ? t : 'home_timeline');
+
         TT.updateTimeStamps();
         
-        var url = 'statuses/home_timeline.json?count=50';
+        var url = 'statuses/' + t + '.json?count=50';
             if (TT.lastID) {
-                url = 'statuses/home_timeline.json?since_id=' + TT.lastID;
+                url = 'statuses/' + t + '.json?since_id=' + TT.lastID;
             }
         TT.fetchURL(url, {
             onload: function() {
