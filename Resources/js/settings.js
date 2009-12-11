@@ -18,6 +18,7 @@ Y.one('#num_items').on('click', function(e) {
     // create dialog
     var dialog = Titanium.UI.createOptionDialog(),
         num_options = [
+            '5 Items',
             '10 Items',
             '25 Items',
             '50 Items',
@@ -25,6 +26,7 @@ Y.one('#num_items').on('click', function(e) {
             '100 Items'
         ];
         num_options_val = [
+            5,
             10,
             25,
             50,
@@ -55,6 +57,7 @@ Y.one('#check_time').on('click', function(e) {
     // create dialog
     var dialog = Titanium.UI.createOptionDialog(),
         num_options = [
+            '1 Minute (Development Use)',
             '5 Minutes',
             '10 Minutes',
             '15 Minutes',
@@ -63,6 +66,7 @@ Y.one('#check_time').on('click', function(e) {
             '60 Minutes'
         ];
         num_options_val = [
+            1,
             5,
             10,
             15,
