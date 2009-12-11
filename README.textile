@@ -18,6 +18,10 @@ h2. Semi-Working
 * Twitpic Posting from Gallery
 * Timeline Caching
 * Bit.ly support expand
+* Settings Window
+* Listing Direct Messages
+* Listing Mentions
+* Search
 
 
 h2. TODO
@@ -25,18 +29,11 @@ h2. TODO
 * Refactor all code
 * Following icon
 * Menu Updates
-* Settings Window
 * Interal Browser
 * Bit.ly support shorten
-* Listing Direct Messages
-* Listing Mentions
 * Twitpic Posting from Camera
-* Search
 * Skinning
 * Icons
 * Background Process.. Titanium doesn't support it, but it needs a hack.
 * Anything else I can think of adding
 
-h2. Screenshot
-
-!http://img.skitch.com/20091202-j2fbef4pscwqg3x6d87m7n3mmi.jpg!
