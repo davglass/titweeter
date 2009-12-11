@@ -26,6 +26,7 @@ var TT = {
     lastID: null,
     firstID: null,
     log: function(str) {
+        str = '<strong>[Titweeter]</strong>: <span style="color: white;">' + str + '</span>';
         Titanium.API.log('debug', str);
     },
     alert: function(str) {
@@ -212,7 +213,16 @@ var TT = {
     showTimeline: function() {
         TT.showLoading('Fetching Timeline Cache..');
         TT.openDB();
-        var rows = db.execute('select * from tweets where (type = "timeline") order by id desc'), 
+        var rows = db.execute('select count(*) as total, type from tweets group by type');
+        if (rows.isValidRow()) {
+            TT.log('Found ' + rows.fieldByName('total') + ' items in cache');
+            while (rows.isValidRow()) {
+                TT.log('Found ' + rows.fieldByName('total') + ' ' + rows.fieldByName('type') + ' items in cache');
+                rows.next();
+            }
+        };
+        rows.close();
+        var rows = db.execute('select * from tweets where (type = "home_timeline") order by id desc'), 
             v;
 
         TT.log('Loading ' + rows.getRowCount() + ' items from cache');
@@ -227,8 +237,7 @@ var TT = {
         while (rows.isValidRow()) {
             //TT.log('Loading Cache: ' + rows.fieldByName('id') + ' :: ' + rows.fieldByName('screen_name'));
             v = TT.formatTimelineRow(Y.JSON.parse(rows.fieldByName('json')));
-            var cls = ((v.me) ? ' class="mine"' : '');
-            var li = Y.Node.create('<li id="' + v.id + '" ' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + TT.filterStatus(v.message) + '</div></li>');
+            var li = this.formatLI(v);
             ul.append(li);
             
             if (!TT.lastID) {
@@ -258,7 +267,7 @@ var TT = {
         TT.log('ShowTimeline_new: ' + t + ' :: ' + q);
         var title = 'Timeline';
         t = ((t) ? t : 'home_timeline');
-        var cache = ((t) ? t : 'timeline');
+        var cache = ((t) ? t : 'home_timeline');
         var qs = 'count=';
 
 
@@ -269,6 +278,9 @@ var TT = {
             case 'mentions':
                 title = 'Mentions';
                 t = 'statuses/' + t;
+                break;
+            case 'favorites':
+                title = 'Favorites';
                 break;
             case 'search':
                 title = 'Search';
@@ -332,6 +344,7 @@ var TT = {
                 TT.createDirectsMenu();
                 break;
             case 'search':
+            case 'favorites':
                 break;
             default:
                 Titanium.Analytics.featureEvent('new.timeline');
@@ -343,6 +356,7 @@ var TT = {
         var menu = Titanium.UI.createMenu();
 
         Titanium.Gesture.addEventListener('shake',function(e) {
+            Titanium.Analytics.featureEvent('shake.update');
             TT.updateTimelines('direct_messages');
         });
 
@@ -383,6 +397,7 @@ var TT = {
         }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
         
         Titanium.Gesture.addEventListener('shake',function(e) {
+            Titanium.Analytics.featureEvent('shake.update');
             TT.updateTimelines('mentions');
         }); 
 
@@ -401,6 +416,12 @@ var TT = {
             win = Titanium.UI.createWindow({ url: 'directs.html' });
             win.open();
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
+        
+        menu.addItem("Favorites", function() {
+            TT.log('Menu: Favorites');
+            win = Titanium.UI.createWindow({ url: 'favs.html' });
+            win.open();
+        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
         menu.addItem("Friends", function() {
             TT.log('Menu: Friends');
@@ -429,6 +450,7 @@ var TT = {
         }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
 
         Titanium.Gesture.addEventListener('shake',function(e) {
+            Titanium.Analytics.featureEvent('shake.update');
             TT.updateTimelines();
         }); 
 
@@ -454,6 +476,12 @@ var TT = {
             TT.showFriends();
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
+        menu.addItem("Favorites", function() {
+            TT.log('Menu: Favorites');
+            win = Titanium.UI.createWindow({ url: 'favs.html' });
+            win.open();
+        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
+
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
             win = Titanium.UI.createWindow({ url: 'search.html' });
@@ -465,6 +493,12 @@ var TT = {
             TT.showSettings();
         }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
 
+        menu.addItem("About", function() {
+            TT.log('Menu: About');
+            win = Titanium.UI.createWindow({ url: 'about.html' });
+            win.open();
+        }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
+
         Titanium.UI.setMenu(menu);
     },
     showFriends: function() {
@@ -474,6 +508,10 @@ var TT = {
     showMentions: function() {
         Titanium.Analytics.featureEvent('show.mentions');
         TT.showTimeline_new('mentions');
+    },
+    showFavs: function() {
+        Titanium.Analytics.featureEvent('show.favorites');
+        TT.showTimeline_new('favorites');
     },
     showDirects: function() {
         Titanium.Analytics.featureEvent('show.directs');
@@ -583,6 +621,10 @@ var TT = {
             info.header = info.header += ' <img src="css/map.gif">';
         }
 
+        if (row.favorited) {
+            info.header = info.header += ' <img src="css/fav.png">';
+        }
+
         if (!TT.statuses[row.id]) {
             TT.statuses[row.id] = row;
         }
@@ -596,7 +638,7 @@ var TT = {
             rows.next();
         } else {
             var sql = 'insert into tweets (id, screen_name, type, json) values (?, ?, ?, ?)';
-            db.execute(sql, info.id, info.user.screen_name, cache, Titanium._JSON(row));
+            db.execute(sql, info.id, info.user.screen_name, cache, Y.JSON.stringify(row));
         }
         rows.close();
         TT.closeDB();
@@ -631,10 +673,8 @@ var TT = {
                         set = false;
                     }
                     TT.firstID = row.id;
-                    info = TT.formatTimelineRow(row, 'timeline');
-                    var cls = ((info.me) ? ' class="mine"' : '');
-                    //TT.log('Update Header: ' + info.header);
-                    var li = Y.Node.create('<li id="' + info.id + '" ' + cls + '><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + TT.filterStatus(info.message) + '</div></li>');
+                    info = TT.formatTimelineRow(row, 'home_timeline');
+                    var li = this.formatLI(info);
                     ul.insertBefore(li, f);
                 }
 
@@ -645,6 +685,16 @@ var TT = {
                 TT.log('Response: ' + this.getResponseText());
             }
         });
+    },
+    formatLI: function(info) {
+        var cls = [];
+        if (info.me) {
+            cls.push('mine');
+        }
+        if (info.favorited) {
+            cls.push('favorite');
+        }
+        return Y.Node.create('<li id="' + info.id + '" class="' + cls.join(' ') + '"><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + TT.filterStatus(info.message) + '</div></li>');
     },
     updateTimeStamps: function() {
         TT.log('update time stamps');
