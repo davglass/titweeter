@@ -1,0 +1,37 @@
+<html>
+	<head>
+		<title>Titweeter: About</title>
+        <link rel="stylesheet" type="text/css" href="css/twitter.css">        
+	</head>
+	<body>
+        <div id="about">
+            <h1>Titweeter</h1>
+            <p><img src="css/logo.png" align="center"></p>
+            <p>Titweeter is an Open Source Twitter client for Android based smart phones.</p>
+            <p>Built with these technologies:</p>
+            <ul>
+                <li>Titanium by <a href="http://www.appcelerator.com/">Appcelerator</a>.</li>
+                <li><a href="http://developer.yahoo.com/yui/3/">YUI 3</a> Javascript Library</li>
+            </ul>
+            <p>App Info:</p>
+            <ul>
+                <li>Version: <em id="version"></em></li>
+                <li>Author(s): <a href="http://blog.davglass.com/">Dav Glass</a> <a href="http://twitter.com/davglass" class="profile">@davglass</a></li>
+                <li>Source <a href="http://github.com/davglass/titweeter">on GitHub</a></li>
+                <li>Bugs <a href="http://github.com/davglass/titweeter/issues">on GitHub</a></li>
+                <li>Twitter: <a href="http://twitter.com/titweeter" class="profile">@titweeter</a></li>
+            </ul>
+            <p>Icons from:</p>
+            <ul>
+                <li>Logo: <a href="http://www.webdesignerdepot.com">Webdesigner Depot</a></li>
+                <li>Favorites: <a href="http://iconlet.com/info/27931_16-heart-red-l_16x16">Joseph North</a></li>
+                <li>Map: <a href="http://iconlet.com/info/18263_MapEntriesType_16x16">Eclipse Project</a></li>
+            </ul>
+        </div>
+        <script src="js/yui3.js"></script>
+		<script src="js/titweeter.js"></script>
+	    <script>
+            Y.one('#version').set('innerHTML', Titanium.App.getVersion());
+        </script>
+    </body>
+</html>
