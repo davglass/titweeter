@@ -150,6 +150,12 @@ html, body {
     -webkit-border-bottom-right-radius: 4px;
 }
 
+#timeline ul li.favorite {
+    background-image: url(fav.png);
+    background-repeat: no-repeat;
+    background-position: 5px 5px;
+}
+
 .hide-proimage #timeline ul li img,
 .hide-proimage #timeline ul li.mine img {
     display: none;
@@ -261,3 +267,31 @@ html, body {
     height: 50px;
 }
 
+#about {
+    text-align: left;
+    margin: 1em;
+    background-color: #fff;
+    -webkit-border-radius: 4px;
+    padding: 1em;
+}
+
+#about h1 {
+    font-weight: bold;
+    font-size: 18px;
+}
+#about img {
+    height: 128px;
+    width: 128px;
+}
+
+#about p {
+    margin: 1em;
+}
+
+#about ul {
+    margin: 1em;
+}
+#about ul li {
+    margin-left: 30px;
+    list-style-type: square;
+}
