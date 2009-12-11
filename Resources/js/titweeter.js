@@ -1,14 +1,39 @@
-var db = Titanium.Database.open('titweeter');
-//db.execute('drop table tweets');
-db.execute('create table if not exists tweets (id integer, screen_name text, type text, json text)');
 
-db.execute('delete from tweets');
+var Y, db,
+    bitly = {
+        username: 'davglass',
+        key: 'R_6c177964b29afb4bd3e40e14c1531ced'
+    };
+
+YUI().use('*', function(Yc) {
+    Y = Yc;
+});
+
+
 
 var TT = {
+    openDB: function() {
+        db = Titanium.Database.open('titweeter');
+
+        //db.execute('drop table tweets');
+        db.execute('create table if not exists tweets (id integer, screen_name text, type text, json text)');
+
+        //db.execute('delete from tweets');
+    },
+    closeDB: function() {
+        db.close();
+    },
     lastID: null,
     firstID: null,
     log: function(str) {
         Titanium.API.log('debug', str);
+    },
+    alert: function(str) {
+        TT.hideLoading();
+        var a = Titanium.UI.createAlertDialog();
+        a.setTitle('Alert');
+        a.setMessage(str);
+        a.show(); 
     },
     showError: function(str) {
         TT.hideLoading();
@@ -73,9 +98,14 @@ var TT = {
             return false;
         }
         var creds = TT.getCreds(),
-            xhr = Titanium.Network.createHTTPClient(),
+            proto = TT.proto + ':/'+'/' + creds.login + ':' + creds.passwd + '@';
+        
+        if (url.indexOf('search') !== -1) {
+            proto = 'http:/'+'/search.';
+        }
+        var xhr = Titanium.Network.createHTTPClient(),
             meth = 'GET', o = null,
-            url = TT.proto + ':/'+'/' + creds.login + ':' + creds.passwd + '@twitter.com/' + url;
+            url =  proto + 'twitter.com/' + url;
 
         if (cb) {
             if (cb.type) {
@@ -181,6 +211,7 @@ var TT = {
     statuses: {},
     showTimeline: function() {
         TT.showLoading('Fetching Timeline Cache..');
+        TT.openDB();
         var rows = db.execute('select * from tweets where (type = "timeline") order by id desc'), 
             v;
 
@@ -209,6 +240,7 @@ var TT = {
         }
         // close database
         rows.close();
+        TT.closeDB();
 
         TT.hideLoading();
 
@@ -217,18 +249,44 @@ var TT = {
         window.setTimeout(TT.updateTimelines, 200);
         TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
     },
-    showTimeline_new: function(t) {
+    showTimeline_new: function(t, q) {
+        TT.log('ShowTimeline_new: ' + t + ' :: ' + q);
+        var title = 'Timeline';
         t = ((t) ? t : 'home_timeline');
-        cache = ((t) ? t : 'timeline');
+        var cache = ((t) ? t : 'timeline');
+        var qs = 'count=';
 
-        TT.showLoading('Fetching Timeline.. ' + t);
-        TT.fetchURL('statuses/' + t + '.json?count=50', {
+
+        switch (t) {
+            case 'direct_messages':
+                title = 'Direct Messages';
+                break;
+            case 'mentions':
+                title = 'Mentions';
+                t = 'statuses/' + t;
+                break;
+            case 'search':
+                title = 'Search';
+                t = 'search';
+                qs = 'q=' + encodeURIComponent(q) + '&rpp=';
+                break;
+            default:
+                t = 'statuses/' + t;
+                break;
+        }
+
+        TT.showLoading('Fetching ' + title + '.. ');
+        TT.fetchURL(t + '.json?' + qs + TT.settings.num_items , {
             onload: function() {
                 TT.showLoading('Parsing Timeline..');
                 TT.log('TimelineXHR Loaded');
                 var json = eval('(' + this.responseText + ')'),
                     set = true, c = 0, row, info,
                     data = [];
+
+                if (json.query) {
+                    json = json.results;
+                }
 
                 for (var c = 0; c < json.length; c++) {
                     var row = json[c];
@@ -265,11 +323,51 @@ var TT = {
             case 'mentions':
                 TT.createMentionsMenu();
                 break;
+            case 'direct_messages':
+                TT.createDirectsMenu();
+                break;
+            case 'search':
+                break;
             default:
                 Titanium.Analytics.featureEvent('new timeline');
                 TT.createTimelineMenu();
                 break;
         }
+    },
+    createDirectsMenu: function() {
+        var menu = Titanium.UI.createMenu();
+
+        Titanium.Gesture.addEventListener('shake',function(e) {
+            TT.updateTimelines('direct_messages');
+        });
+
+        menu.addItem("Refresh", function() {
+            TT.log('Menu: Refresh Timeline');
+            TT.updateTimelines('direct_messages');
+        }/*, Titanium.UI.Android.SystemIcon.VIEW*/);
+
+        menu.addItem("Timeline", function() {
+            TT.log('Menu: Timeline');
+            Titanium.UI.currentWindow.close();
+        }/*, Titanium.UI.Android.SystemIcon.ZOOM*/);
+
+        menu.addItem("Friends", function() {
+            TT.log('Menu: Friends');
+            TT.showFriends();
+        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
+
+        menu.addItem("Search", function() {
+            TT.log('Menu: Search');
+            win = Titanium.UI.createWindow({ url: 'search.html' });
+            win.open();
+        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
+
+        menu.addItem("Settings", function() {
+            TT.log('Menu: Settings');
+            TT.showSettings();
+        }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
+
+        Titanium.UI.setMenu(menu);
     },
     createMentionsMenu: function() {
         var menu = Titanium.UI.createMenu();
@@ -278,6 +376,10 @@ var TT = {
             win = Titanium.UI.createWindow({ url: 'post.html' });
             win.open();
         }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
+        
+        Titanium.Gesture.addEventListener('shake',function(e) {
+            TT.updateTimelines('mentions');
+        }); 
 
         menu.addItem("Refresh", function() {
             TT.log('Menu: Refresh Timeline');
@@ -291,7 +393,8 @@ var TT = {
 
         menu.addItem("Directs", function() {
             TT.log('Menu: Directs');
-            TT.not('Directs');
+            win = Titanium.UI.createWindow({ url: 'directs.html' });
+            win.open();
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
 
         menu.addItem("Friends", function() {
@@ -301,11 +404,12 @@ var TT = {
 
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
-            TT.not('Search');
+            win = Titanium.UI.createWindow({ url: 'search.html' });
+            win.open();
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
-        menu.addItem("Options", function() {
-            TT.log('Menu: Options');
+        menu.addItem("Settings", function() {
+            TT.log('Menu: Settings');
             TT.showSettings();
         }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
 
@@ -318,6 +422,10 @@ var TT = {
             win = Titanium.UI.createWindow({ url: 'post.html' });
             win.open();
         }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
+
+        Titanium.Gesture.addEventListener('shake',function(e) {
+            TT.updateTimelines();
+        }); 
 
         menu.addItem("Refresh", function() {
             TT.log('Menu: Refresh Timeline');
@@ -332,7 +440,8 @@ var TT = {
 
         menu.addItem("Directs", function() {
             TT.log('Menu: Directs');
-            TT.not('Directs');
+            win = Titanium.UI.createWindow({ url: 'directs.html' });
+            win.open();
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
 
         menu.addItem("Friends", function() {
@@ -342,11 +451,12 @@ var TT = {
 
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
-            TT.not('Search');
+            win = Titanium.UI.createWindow({ url: 'search.html' });
+            win.open();
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
-        menu.addItem("Options", function() {
-            TT.log('Menu: Options');
+        menu.addItem("Settings", function() {
+            TT.log('Menu: Settings');
             TT.showSettings();
         }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
 
@@ -359,6 +469,14 @@ var TT = {
     showMentions: function() {
         Titanium.Analytics.featureEvent('show.mentions');
         TT.showTimeline_new('mentions');
+    },
+    showDirects: function() {
+        Titanium.Analytics.featureEvent('show.directs');
+        TT.showTimeline_new('direct_messages');
+    },
+    showSearch: function(q) {
+        Titanium.Analytics.featureEvent('show.search');
+        TT.showTimeline_new('search', q);
     },
     filterStatus: function(txt) {
         //Filter URL's
@@ -384,10 +502,26 @@ var TT = {
         var d = '<em>' + TT.toRelativeTime(new Date(row.created_at)) + '</em>',
             s = row.source, a,
             div = document.createElement('div'),
-            username = row.user.name,
-            img = row.user.profile_image_url,
-            txt = row.text,
-            user = row.user;
+            txt = row.text;
+
+        if (row.sender_id) {
+            //Direct Message Formatting
+            row.user = row.sender;
+            s = 'direct message';
+        }
+
+        if (row.from_user_id) {
+            row.user = {
+                id: row.from_user_id,
+                profile_image_url: row.profile_image_url,
+                name: row.from_user
+            };
+        }
+
+        var username = row.user.name,
+            user = row.user,
+            img = row.user.profile_image_url;
+ 
 
         div.innerHTML = s;
         a = div.firstChild;
@@ -422,12 +556,13 @@ var TT = {
             geo: false
         };
 
+
         Y.each(row, function(v, k) {
             if (!info[k]) {
                 info[k] = v;
             }
         });
- 
+
         if (row.user.screen_name == TT.creds.login) {
             info.me = true;
         }
@@ -438,12 +573,13 @@ var TT = {
         }
         
         if (!TT.statuses[row.id]) {
-            TT.statuses[row.id] = info;
+            TT.statuses[row.id] = row;
         }
         
         if (!cache) {
             cache = 'status';
         }
+        TT.openDB();
         var rows = db.execute('select * from tweets where (id = ' + info.id + ')');
         if (rows.isValidRow()) {
             rows.next();
@@ -453,6 +589,7 @@ var TT = {
             db.execute(sql, info.id, info.user.screen_name, cache, Titanium._JSON(row));
         }
         rows.close();
+        TT.closeDB();
 
         return info;
         
@@ -465,7 +602,7 @@ var TT = {
 
         TT.updateTimeStamps();
         
-        var url = 'statuses/' + t + '.json?count=50';
+        var url = 'statuses/' + t + '.json?count=' + TT.settings.num_items;
             if (TT.lastID) {
                 url = 'statuses/' + t + '.json?since_id=' + TT.lastID;
             }
@@ -532,22 +669,49 @@ var TT = {
             e.halt();
         }
         TT.showProfile({ id: stat.user.screen_name });
+    },
+    settings: {
+        num_items: 50,
+        bitly: '1',
+        enter: '0',
+        https: '0',
+        geo: '1',
+        proimage: '1'
+    },
+    loadSettings: function() {
+        if (Y && Y.each) {
+            Y.each(TT.settings, function(v, k) {
+                var title = 'SETTING_' + k.toUpperCase();
+                //TT.log('[SETTINGS]: ' + title);
+                var setting = Titanium.App.Properties.getString(title);
+                if (setting) {
+                    v = setting;
+                }
+                Titanium.App.Properties.setString(title, v);
+                TT.settings[k] = v;
+            });
+            
+            TT.proto = 'http';
+            if (TT.settings.https == '1') {
+                TT.proto = 'https';
+            }
+            if (TT.settings.proimage == '1') {
+                Y.one('body').removeClass('hide-proimage');
+            } else {
+                Y.one('body').addClass('hide-proimage');
+            }
+            //TT.log('[SETTINGS]: ' + Y.JSON.stringify(TT.settings));
+        }
     }
-
 };
 
-var Y,
-    bitly = {
-        username: 'davglass',
-        key: 'R_6c177964b29afb4bd3e40e14c1531ced'
-    };
-
-YUI().use('*', function(Yc) {
-    Y = Yc;
+Titanium.UI.currentWindow.addEventListener('focused', function() {
+    TT.getCreds();
+    TT.loadSettings();
 });
 
 TT.getCreds();
-
+TT.loadSettings();
 
 Y.delegate('click', function(e) {
     var tar = e.currentTarget,
@@ -572,29 +736,31 @@ Y.delegate('click', function(e) {
                 TT.log('Twitpic URL: ' + url);
                 TT.showImage(url);
             }
-            if (href.indexOf('bit.ly') !== -1) {
-                e.halt();
-                TT.log('Found Bitly URL');
-                TT.showLoading('Expanding Url');
-                var xhr = Titanium.Network.createHTTPClient();
-                xhr.onload = function() {
-                    TT.log('Bitly reponse: ' + this.responseText);
-                    var json = Y.JSON.parse(this.responseText);
-                    Y.each(json.results, function(v) {
-                        var url = v.longUrl;
-                        tar.set('href', url).set('innerHTML', url);
+            if (TT.settings.bitly == '1') {
+                if (href.indexOf('bit.ly') !== -1) {
+                    e.halt();
+                    TT.log('Found Bitly URL');
+                    TT.showLoading('Expanding Url');
+                    var xhr = Titanium.Network.createHTTPClient();
+                    xhr.onload = function() {
+                        TT.log('Bitly reponse: ' + this.responseText);
+                        var json = Y.JSON.parse(this.responseText);
+                        Y.each(json.results, function(v) {
+                            var url = v.longUrl;
+                            tar.set('href', url).set('innerHTML', url);
+                        });
+                        TT.hideLoading();
+                    };
+                    var o = TT.stringifyObject({
+                        login: bitly.username,
+                        apiKey: bitly.key,
+                        version: '2.0.1',
+                        format: 'json',
+                        shortUrl: href
                     });
-                    TT.hideLoading();
-                };
-                var o = TT.stringifyObject({
-                    login: bitly.username,
-                    apiKey: bitly.key,
-                    version: '2.0.1',
-                    format: 'json',
-                    shortUrl: href
-                });
-                xhr.open('GET', 'http:/'+'/api.bit.ly/expand?' + o);
-                xhr.send(null);
+                    xhr.open('GET', 'http:/'+'/api.bit.ly/expand?' + o);
+                    xhr.send(null);
+                }
             }
             //TODO
             break;

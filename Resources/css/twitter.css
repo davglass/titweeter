@@ -54,17 +54,39 @@ html, body {
 #settings {
     text-align: left;
     color: #fff;
+    font-size: 18px;
 }
 
 #settings h2 {
     background-color: #ccc;
-    color: #fff;
-    font-weight: bold;
+    color: #000;
     padding: 2px;
     padding-left: 4px;
-    font-size: 10px;
+    font-size: 16px;
 }
 
+#settings input {
+    border: 1px solid #fff;
+    -webit-border-radius: 2px;
+}
+
+#settings li {
+    padding: 10px;
+    height: 32px;
+    border-bottom: 1px solid white;
+}
+
+#settings li em {
+    display: block;
+    height: 32px;
+    width: 32px;
+    float: right;
+    margin-top: -3px;
+    background-image: url( checkbox.png );
+}
+#settings li em.selected {
+    background-image: url( checkbox_checked.png );
+}
 .section {
     border: 1px solid #fff;
     padding:10px;
@@ -99,6 +121,7 @@ html, body {
 #timeline ul li.mine img {
     float: right;
 }
+
 #timeline ul li h2 img,
 #timeline ul li.mine h2 img {
     float: none;
@@ -125,6 +148,17 @@ html, body {
     -webkit-border-top-right-radius: 0;
     -webkit-border-bottom-left-radius: 4px;
     -webkit-border-bottom-right-radius: 4px;
+}
+
+.hide-proimage #timeline ul li img,
+.hide-proimage #timeline ul li.mine img {
+    display: none;
+}
+
+.hide-proimage #timeline ul li .text,
+.hide-proimage #timeline ul li.mine .text {
+    margin-right: 0px;
+    margin-left: 0px;
 }
 
 #timeline ul li:nth-child(2n+1) .text {

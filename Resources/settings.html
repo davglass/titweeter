@@ -1,122 +1,32 @@
 <html>
 	<head>
-		<title>Titweeter: Options</title>
+		<title>Titweeter: Settings</title>
         <link rel="stylesheet" type="text/css" href="css/twitter.css">        
 	</head>
 	<body>
         <div id="settings">
             <h2>Account Details</h2>
-            <div style="height:150px;padding-top:30px;" class="section">
-                <div style="height:50px;float:left;margin-right:10px">
-                    Username:
-                </div>
-                <div style="float:left">
-                    <div id="textfield1" style="height:50px;width:170px"></div>
-                </div>
-                <div style="clear:both;margin;top:10px"></div>
-                <div style="height:50px;float:left;margin-right:10px">
-                    Password:
-                </div>
-                <div style="float:left">
-                    <div id="textfield2" style="height:50px;width:170px"></div>
-                </div>
-                <div style="clear:both;margin;top:10px"></div>
-                <div style="margin-left:80px;">
-                    <div id="button"></div>
-                </div>
-            </div>
+            <ul>
+                <li>Username: <input type="text" id="login" value=""></li>
+                <li>Password: &nbsp;<input type="password" id="passwd" value=""></li>
+            </ul>
+            <h2>Options</h2>
+            <ul>
+                <li class="check">Enter key sends status <em id="enter"></em></li>
+                <li class="check">Auto expand bit.ly links <em id="bitly"></em></li>
+                <li class="check">Use https for requests <em id="https"></em></li>
+                <li class="check">Send Geo data with status <em id="geo"></em></li>
+                <li class="check">Show profile images <em id="proimage"></em></li>
+            </ul>
+            <h2>App Settings</h2>
+            <ul>
+                <li id="num_items">Number of items to fetch in timeline: <strong>50</strong></li>
+                <li id="clear_cache">Clear App Cache</li>
+            </ul>
         </div>
         
+		<script src="js/yui3.js"></script>
 		<script src="js/titweeter.js"></script>
-        <script>
-        var creds = TT.getCreds();
-        var login = (creds.login) ? creds.login : '';
-        var passwd = (creds.passwd) ? creds.passwd : '';
-		var height = (Titanium.Platform.name.indexOf('iPhone') != -1) ? 30: 40;
-		var tf1 = Titanium.UI.createTextField({
-			id:'textfield1',
-			value: login,
-			keyboardType:Titanium.UI.KEYBOARD_EMAIL,
-			//hintText:'Twitter Username',
-			width: 170,
-			height: height,
-			//clearOnEdit:true,
-			clearButtonMode:Titanium.UI.INPUT_BUTTONMODE_ALWAYS
-		});
-		var tf2 = Titanium.UI.createTextField({
-			id:'textfield2',
-			value: passwd,
-			keyboardType: Titanium.UI.KEYBOARD_ASCII,
-			//hintText: 'Twitter Password',
-			width: 170,
-			height: height,
-			//clearOnEdit: true,
-			passwordMask: true,
-			clearButtonMode: Titanium.UI.INPUT_BUTTONMODE_ALWAYS
-		});
-		var button = Titanium.UI.createButton({
-			id: 'button',
-			title: 'Save',
-			color: '#336699',
-			height: 32,
-			width: 100,
-			fontSize: 12,
-			fontWeight: 'bold'
-		});
-        Titanium.UI.currentWindow.addEventListener('unfocused',function() {
-            TT.log('Settings window unfocused');
-            //Titanium.UI.currentWindow.close();
-        });
-        
-		button.addEventListener('click', function() {
-            TT.log('Checking Creds');
-			// hide the keyboards if they're showing
-			tf1.blur();
-			tf2.blur();
-
-			var login = tf1.value,
-			    passwd = tf2.value,
-                creds = TT.getCreds(),
-                url = 'https:/'+'/' + login + ':' + passwd + '@twitter.com/account/verify_credentials.json',
-                xhr = Titanium.Network.createHTTPClient();
-
-            if (login != '' && passwd != '') {
-                if (creds.login == login && creds.passwd == passwd) {
-                    Titanium.UI.currentWindow.close();
-                } else {
-                    TT.showLoading('Verifing Credentials');
-                    TT.log('Fetching URL: ' + url);
-                    xhr.onload = function() {
-                        TT.log('Verify Creds');
-                        var json = eval('('+this.responseText+')');
-                        if (json.error) {
-                            TT.log('ERROR: ' + json.error);
-                            TT.showError(json.error);
-                        } else {
-                            Titanium.Analytics.featureEvent('settings.creds'); 
-                            db.execute('delete from tweets');
-                            TT.log('setCreds..');
-                            TT.setCreds(login, passwd);
-                            TT.hideLoading();
-                            Titanium.UI.currentWindow.close();
-                        }
-                    };
-                    xhr.open("GET",url);
-                    xhr.send();
-                }
-            } else {
-                TT.log('Show Error');
-                if (!login && !passwd) {
-                    TT.showError('Username and Password are required');
-                } else if (!login) {
-                    TT.showError('Username is required');
-                } else {
-                    TT.showError('Password is required');
-                }
-            }
-
-		});
-        
-        </script>
+		<script src="js/settings.js"></script>
 	</body>
 </html>

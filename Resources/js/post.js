@@ -43,8 +43,6 @@
     var ta1 = Titanium.UI.createTextArea({
         id: 'post_status', 
         value: val,
-        //height: 100,
-        //width: 300,
         autocorrect: true,
         borderStyle: Titanium.UI.INPUT_BORDERSTYLE_BEZEL,
         returnKeyType: Titanium.UI.RETURNKEY_SEND
@@ -161,15 +159,21 @@
     
 
     var postStatus = function() {
-        TT.log('Post Status: ' + ta1.value);
-        TT.showLoading('Getting Geo...');
-        Titanium.Geolocation.getCurrentPosition(function(e) {
-            TT.log('Coords: ' + e.coords.latitude + ' :: ' + e.coords.longitude);
-            postStatusReal(e);
-        }, function(e) {
-            TT.log('Coords Lookup Failed');
-            postStatusReal(e);
-        });
+        
+        if (TT.settings.geo == '1') {
+            TT.log('Post Status: ' + ta1.value);
+            TT.showLoading('Getting Geo...');
+            Titanium.Geolocation.getCurrentPosition(function(e) {
+                TT.log('Coords: ' + e.coords.latitude + ' :: ' + e.coords.longitude);
+                postStatusReal(e);
+            }, function(e) {
+                TT.log('Coords Lookup Failed');
+                postStatusReal(e);
+            });
+        } else {
+            TT.log('Skipping Geo Lookup..');
+            postStatusReal({});
+        }
     };
 
     var cCount = Y.one('#charCount');
@@ -198,6 +202,12 @@
     button.addEventListener('click', function() {
         postStatus();
     });
+
+    if (TT.settings.enter == '1') {
+        ta1.addEventListener('return', function() {
+            postStatus();
+        });
+    }
     
     var pic_button = Titanium.UI.createButton({
         id: 'attach_button',

@@ -4,12 +4,13 @@
     var stat = TT.formatTimelineRow(Titanium.App.Properties.getList('currentStatusList'));
     document.title = 'Titweeter: Status: ' + stat.user.name;
 
-    TT.showTimeline_new('show.status');
+    Titanium.Analytics.featureEvent('show.status');
 
     TT.formatProfileHeader(stat.user);
 
     var txt = TT.filterStatus(stat.text);
     TT.log('Status: ' + txt);
+    TT.log('Status: ' + Y.JSON.stringify(stat));
 
     if (stat.geo) {
         var geo = Y.one('#status a.geo');
@@ -31,6 +32,7 @@
             TT.showLoading('Fetching Status');
             TT.log('Load New Status Window');
             TT.log('Checking Status Cache');
+            TT.openDB();
             var rows = db.execute('select * from tweets where (id = ' + stat.in_reply_to_status_id + ')');
             if (rows.isValidRow()) {
                 TT.log('Found Status in Cache');
@@ -51,6 +53,7 @@
                 xhr.open("GET",url);
                 xhr.send();
             }
+            TT.closeDB();
         });
         
     }

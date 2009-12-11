@@ -1,0 +1,32 @@
+<html>
+	<head>
+		<title>Titweeter: Search</title>
+        <link rel="stylesheet" type="text/css" href="css/twitter.css">
+	    <style>
+            #search {
+                width: 100%;
+                height: 50px;
+            }
+        </style>
+    </head>
+	<body>
+        <div id="search"></div>
+        <div id="timeline"><ul></ul></div>
+		<script src="js/yui3.js"></script>
+		<script src="js/titweeter.js"></script>
+		<script>
+       		var search = Titanium.UI.createSearchBar({
+                id: 'search',
+                barColor: '#ccc',
+                returnKeyType: Titanium.UI.RETURNKEY_SEARCH 
+            });
+			search.addEventListener('return', function(e) {
+				search.blur();
+				TT.log('Search: ' + search.value);
+                TT.showSearch(search.value);
+			});
+ 
+        
+        </script>
+	</body>
+</html>
