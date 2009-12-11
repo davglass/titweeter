@@ -150,12 +150,6 @@ html, body {
     -webkit-border-bottom-right-radius: 4px;
 }
 
-#timeline ul li.favorite {
-    background-image: url(fav.png);
-    background-repeat: no-repeat;
-    background-position: 5px 5px;
-}
-
 .hide-proimage #timeline ul li img,
 .hide-proimage #timeline ul li.mine img {
     display: none;

@@ -149,7 +149,7 @@ checkCreds = function() {
 
             if (creds.login == login && creds.passwd == passwd) {
             } else {
-                TT.showLoading('Verifing Credentials', true);
+                TT.showLoading('Verifing Credentials');
                 TT.log('Fetching URL: ' + url);
                 xhr.onload = function() {
                     TT.log('Verify Creds');

@@ -16,7 +16,7 @@ var TT = {
         db = Titanium.Database.open('titweeter');
 
         //db.execute('drop table tweets');
-        db.execute('create table if not exists tweets (id integer, screen_name text, type text, json text)');
+        db.execute('create table if not exists tweets (id integer primary key, screen_name text, type text, json text)');
 
         //db.execute('delete from tweets');
     },
@@ -237,7 +237,7 @@ var TT = {
         while (rows.isValidRow()) {
             //TT.log('Loading Cache: ' + rows.fieldByName('id') + ' :: ' + rows.fieldByName('screen_name'));
             v = TT.formatTimelineRow(Y.JSON.parse(rows.fieldByName('json')));
-            var li = this.formatLI(v);
+            var li = TT.formatLI(v);
             ul.append(li);
             
             if (!TT.lastID) {
@@ -633,14 +633,8 @@ var TT = {
             cache = 'status';
         }
         TT.openDB();
-        var rows = db.execute('select * from tweets where (id = ' + info.id + ')');
-        if (rows.isValidRow()) {
-            rows.next();
-        } else {
-            var sql = 'insert into tweets (id, screen_name, type, json) values (?, ?, ?, ?)';
-            db.execute(sql, info.id, info.user.screen_name, cache, Y.JSON.stringify(row));
-        }
-        rows.close();
+        var sql = 'insert or replace into tweets (id, screen_name, type, json) values (?, ?, ?, ?)';
+        db.execute(sql, info.id, info.user.screen_name, cache, Y.JSON.stringify(row));
         TT.closeDB();
 
         return info;
@@ -674,7 +668,7 @@ var TT = {
                     }
                     TT.firstID = row.id;
                     info = TT.formatTimelineRow(row, 'home_timeline');
-                    var li = this.formatLI(info);
+                    var li = TT.formatLI(info);
                     ul.insertBefore(li, f);
                 }
 
@@ -709,7 +703,7 @@ var TT = {
     },
     showSettings: function() {
         TT.log('TT.showSettings');
-        var win = Titanium.UI.createWindow({ url: 'settings.html', fullscreen: true });
+        var win = Titanium.UI.createWindow({ url: 'settings.html' });
         win.open();
     },
     formatProfileHeader: function(user) {
