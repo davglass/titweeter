@@ -12,9 +12,11 @@
         var creds = TT.getCreds(), login=false;
 
         if (creds.login && creds.passwd) {
+            Titanium.Analytics.featureEvent('app.launch');
             TT.log('Loading Timeline');
             TT.showTimeline();
         } else {
+            Titanium.Analytics.featureEvent('app.launch.new');
             TT.log('No Creds, loading login screen');
             TT.showSettings();
             login=true;
@@ -31,7 +33,6 @@
                 }
             }
         });
-
         </script>
 	</body>
 </html>

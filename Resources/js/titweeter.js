@@ -245,9 +245,14 @@ var TT = {
         TT.hideLoading();
 
         TT.createTimelineMenu();
-        //TT.updateTimelines();
         window.setTimeout(TT.updateTimelines, 200);
-        TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
+        TT.setTimer();
+    },
+    setTimer: function() {
+        TT.checker = window.setInterval(TT.updateTimelines, ((TT.settings.check_time * 1000) * 60));
+    },
+    cancelTimer: function() {
+        clearInterval(TT.checker);
     },
     showTimeline_new: function(t, q) {
         TT.log('ShowTimeline_new: ' + t + ' :: ' + q);
@@ -268,7 +273,7 @@ var TT = {
             case 'search':
                 title = 'Search';
                 t = 'search';
-                qs = 'q=' + encodeURIComponent(q) + '&rpp=';
+                qs = 'q=' + encodeURIComponent(q) + '&rpp=20&foo=';
                 break;
             default:
                 t = 'statuses/' + t;
@@ -310,7 +315,7 @@ var TT = {
                 
                 TT.hideLoading();
                 if (t === 'home_timeline') {
-                    TT.checker = window.setInterval(TT.updateTimelines, (2000 * 60));
+                    TT.setTimer();
                 }
             },
             onerror: function() {
@@ -329,7 +334,7 @@ var TT = {
             case 'search':
                 break;
             default:
-                Titanium.Analytics.featureEvent('new timeline');
+                Titanium.Analytics.featureEvent('new.timeline');
                 TT.createTimelineMenu();
                 break;
         }
@@ -493,14 +498,20 @@ var TT = {
         //Filter #hashtags
         //Hook search view up here..
         txt = txt.replace(/[#]+[A-Za-z0-9-_]+/g, function(f, n, s) {
-            return '<a href="http:/'+'/search.twitter.com/search?q=' + f.replace('#', '%23') + '" class="search">' + f + '</a>';
+            //return '<a href="http:/'+'/search.twitter.com/search?q=' + f.replace('#', '%23') + '" class="search">' + f + '</a>';
+            return '<a href="' + f + '" class="search">' + f + '</a>';
         });
         
         return txt;
     },
+    html_entity_decode: function(str) {
+        var ta = document.createElement('textarea');
+        ta.innerHTML = str.replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        return ta.value;
+    },
     formatTimelineRow: function(row, cache) {
         var d = '<em>' + TT.toRelativeTime(new Date(row.created_at)) + '</em>',
-            s = row.source, a,
+            s = TT.html_entity_decode(row.source), a,
             div = document.createElement('div'),
             txt = row.text;
 
@@ -525,7 +536,7 @@ var TT = {
 
         div.innerHTML = s;
         a = div.firstChild;
-        if (a.nodeName == 'A') {
+        if (a && a.nodeName == 'A') {
             s = a.innerHTML;
         }
 
@@ -571,7 +582,7 @@ var TT = {
             info.geo = row.geo.coordinates;
             info.header = info.header += ' <img src="css/map.gif">';
         }
-        
+
         if (!TT.statuses[row.id]) {
             TT.statuses[row.id] = row;
         }
@@ -585,7 +596,6 @@ var TT = {
             rows.next();
         } else {
             var sql = 'insert into tweets (id, screen_name, type, json) values (?, ?, ?, ?)';
-            //TT.log('SQL: ' + sql);
             db.execute(sql, info.id, info.user.screen_name, cache, Titanium._JSON(row));
         }
         rows.close();
@@ -623,7 +633,7 @@ var TT = {
                     TT.firstID = row.id;
                     info = TT.formatTimelineRow(row, 'timeline');
                     var cls = ((info.me) ? ' class="mine"' : '');
-                    TT.log('Update Header: ' + info.header);
+                    //TT.log('Update Header: ' + info.header);
                     var li = Y.Node.create('<li id="' + info.id + '" ' + cls + '><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + TT.filterStatus(info.message) + '</div></li>');
                     ul.insertBefore(li, f);
                 }
@@ -671,6 +681,7 @@ var TT = {
         TT.showProfile({ id: stat.user.screen_name });
     },
     settings: {
+        check_time: 15,
         num_items: 50,
         bitly: '1',
         enter: '0',
@@ -716,7 +727,7 @@ TT.loadSettings();
 Y.delegate('click', function(e) {
     var tar = e.currentTarget,
         cls = tar.get('className'),
-        href = tar.get('href');
+        href = tar.getAttribute('href', 2);
     
     TT.log('[DELEGATE]: Click: ' + cls);
     switch (cls) {
@@ -725,8 +736,10 @@ Y.delegate('click', function(e) {
             e.halt();
             break;
         case 'search':
-            //TODO
-            break;
+                Titanium.App.Properties.setString('SEARCH', href);
+                win = Titanium.UI.createWindow({ url: 'search.html' });
+                win.open();
+                break;
         case 'url':
             if (href.indexOf('twitpic.com') !== -1) {
                 e.halt();

@@ -51,7 +51,48 @@ Y.one('#num_items').on('click', function(e) {
 });
 
 
+Y.one('#check_time').on('click', function(e) {
+    // create dialog
+    var dialog = Titanium.UI.createOptionDialog(),
+        num_options = [
+            '5 Minutes',
+            '10 Minutes',
+            '15 Minutes',
+            '30 Minutes',
+            '45 Minutes',
+            '60 Minutes'
+        ];
+        num_options_val = [
+            5,
+            10,
+            15,
+            30,
+            45,
+            60
+        ];
+    
+    // set button titles
+
+    dialog.setOptions(num_options);
+
+    // set title
+    dialog.setTitle('Timeline refresh interval');
+
+    // add event listener
+    dialog.addEventListener('click',function(e) {
+        var num = num_options_val[e.index];
+        Y.one('#check_time strong').set('innerHTML', num);
+        Titanium.App.Properties.setString('SETTING_CHECK_TIME', num);
+    });
+
+    // show dialog
+    dialog.show();
+});
+
+
 Y.one('#num_items strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_NUM_ITEMS'));
+Y.one('#check_time strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_CHECK_TIME'));
+
 var creds = TT.getCreds();
 Y.one('#login').set('value', creds.login);
 Y.one('#passwd').set('value', creds.passwd);
@@ -77,7 +118,9 @@ Y.one('#clear_cache').on('click', function(e) {
             TT.showLoading('Clearing Application Settings');
             TT.openDB();
             db.execute('delete from tweets');
-            TT.closeDB();
+            db.execute('drop table tweets');
+            db.close();
+            db.remove();
             Titanium.App.Properties.setString('LOGIN', null);
             Titanium.App.Properties.setString('PASSWD', null);
             Titanium.App.Properties.setString('SETTING_NUM_ITEMS', 50);

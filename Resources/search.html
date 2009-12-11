@@ -2,12 +2,6 @@
 	<head>
 		<title>Titweeter: Search</title>
         <link rel="stylesheet" type="text/css" href="css/twitter.css">
-	    <style>
-            #search {
-                width: 100%;
-                height: 50px;
-            }
-        </style>
     </head>
 	<body>
         <div id="search"></div>
@@ -15,18 +9,45 @@
 		<script src="js/yui3.js"></script>
 		<script src="js/titweeter.js"></script>
 		<script>
-       		var search = Titanium.UI.createSearchBar({
+            var config = {
                 id: 'search',
                 barColor: '#ccc',
+                hintText: 'Enter a search term',
                 returnKeyType: Titanium.UI.RETURNKEY_SEARCH 
-            });
-			search.addEventListener('return', function(e) {
+            },
+            term = Titanium.App.Properties.getString('SEARCH'),
+            doSearch = function() {
 				search.blur();
+                document.title = 'Titweeter: Search: ' + search.value;
 				TT.log('Search: ' + search.value);
                 TT.showSearch(search.value);
-			});
- 
-        
+                Y.one('#timeline ul').set('innerHTML', '');
+            };
+            
+            if (term) {
+                Titanium.App.Properties.setString('SEARCH', null);
+                delete config.hintText;
+                config.value = term;
+            }
+            
+       		var search = Titanium.UI.createSearchBar(config);
+			search.addEventListener('return', doSearch);
+
+            if (term) {
+                doSearch();
+            }
+
+            var menu = Titanium.UI.createMenu();
+
+            menu.addItem("Clear Results", function() {
+                TT.log('Menu: Clear Results');
+                document.title = 'Titweeter: Search:';
+                search.value = '';
+                Y.one('#timeline ul').set('innerHTML', '');
+            });
+
+            Titanium.UI.setMenu(menu);
+
         </script>
 	</body>
 </html>
