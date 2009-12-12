@@ -53,7 +53,6 @@
                 xhr.open("GET",url);
                 xhr.send();
             }
-            TT.closeDB();
         });
         
     }

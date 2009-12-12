@@ -97,9 +97,6 @@ Y.one('#check_time').on('click', function(e) {
 Y.one('#num_items strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_NUM_ITEMS'));
 Y.one('#check_time strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_CHECK_TIME'));
 
-var creds = TT.getCreds();
-Y.one('#login').set('value', creds.login);
-Y.one('#passwd').set('value', creds.passwd);
 
 var lis = Y.all('#settings li.check');
 lis.each(function(node) {
@@ -123,67 +120,90 @@ Y.one('#clear_cache').on('click', function(e) {
             TT.openDB();
             db.execute('delete from tweets');
             db.execute('drop table tweets');
-            db.close();
-            db.remove();
-            Titanium.App.Properties.setString('LOGIN', null);
-            Titanium.App.Properties.setString('PASSWD', null);
+            Titanium.App.Properties.setString('LOGIN', '');
+            Titanium.App.Properties.setString('PASSWD', '');
             Titanium.App.Properties.setString('SETTING_NUM_ITEMS', 50);
 
             TT.alert('Application Cache Cleared.');
+            Titanium.UI.currentWindow.close();
         }
     });
 
     a.show(); 
 });
 
-var l = '', p = '',
-checkCreds = function() {
+var checkCreds = function(l, p) {
     if (l && p) {
         TT.log('Checking Creds');
         // hide the keyboards if they're showing
         var login = l,
             passwd = p,
-            creds = TT.getCreds(),
             url = 'https:/'+'/' + login + ':' + passwd + '@twitter.com/account/verify_credentials.json',
             xhr = Titanium.Network.createHTTPClient();
 
-            if (creds.login == login && creds.passwd == passwd) {
-            } else {
-                TT.showLoading('Verifing Credentials');
-                TT.log('Fetching URL: ' + url);
-                xhr.onload = function() {
-                    TT.log('Verify Creds');
-                    var json = eval('('+this.responseText+')');
-                    if (json.error) {
-                        TT.log('ERROR: ' + json.error);
-                        TT.showError(json.error);
-                    } else {
-                        Titanium.Analytics.featureEvent('settings.creds'); 
-                        TT.openDB();
-                        db.execute('delete from tweets');
-                        TT.closeDB();
-                        TT.log('setCreds..');
-                        TT.setCreds(login, passwd);
-                        TT.hideLoading();
-                    }
-                };
-                xhr.open("GET",url);
-                xhr.send();
-            }
+            TT.showLoading('Verifing Credentials');
+            TT.log('Fetching URL: ' + url);
+            xhr.onload = function() {
+                TT.log('Verify Creds');
+                var json = eval('('+this.responseText+')');
+                if (json.error) {
+                    TT.log('ERROR: ' + json.error);
+                    TT.showError(json.error);
+                } else {
+                    Titanium.Analytics.featureEvent('settings.creds'); 
+                    TT.openDB();
+                    db.execute('delete from tweets');
+                    TT.log('setCreds..');
+                    TT.setCreds(login, passwd);
+                    Y.one('#check').get('parentNode').set('innerHTML', '<small>To reset, clear the App Cache.</small>');
+                    Y.one('#mask').removeClass('disabled');
+                    Y.one('#login').get('parentNode').set('innerHTML', 'Username: ' + l);
+                    Y.one('#passwd').get('parentNode').remove();
+                    
+                    TT.hideLoading();
+                }
+            };
+            xhr.open("GET",url);
+            xhr.send();
+    } else {
+        TT.showError('Fields are required');
     }
 };
 
-Y.one('#login').on('blur', function(e) {
-    if (e.target.get('value')) {
-        l = e.target.get('value');
-        checkCreds();
-    }
-});
+var creds = TT.getCreds();
+if (creds.login != '' && creds.passwd != '') {
+    Y.one('#login').get('parentNode').set('innerHTML', 'Username: ' + creds.login);
+    Y.one('#passwd').get('parentNode').set('innerHTML', '<small>To reset, clear the App Cache</small>');
+    Y.one('#check').get('parentNode').remove();
+    Y.one('#mask').removeClass('disabled');
+} else {
+    flogin = Titanium.UI.createTextField({
+        id: 'login',
+        value: '',
+        keyboardType: Titanium.UI.KEYBOARD_DEFAULT,
+        autocorrect: false,
+        borderStyle: Titanium.UI.INPUT_BORDERSTYLE_ROUNDED
+    });
 
-Y.one('#passwd').on('blur', function(e) {
-    if (e.target.get('value')) {
-        p = e.target.get('value');
-        checkCreds();
-    }
-});
+    fpasswd = Titanium.UI.createTextField({
+        id: 'passwd',
+        value: '',
+        keyboardType: Titanium.UI.KEYBOARD_DEFAULT,
+        autocorrect: false,
+        passwordMask: true,
+        borderStyle: Titanium.UI.INPUT_BORDERSTYLE_ROUNDED
+    });
 
+    var check = Titanium.UI.createButton({
+        id: 'check',
+        title: 'Login',
+        color: '#000'
+    });
+
+    check.addEventListener('click', function() {
+        TT.log('Check clicked: ' + flogin.value + ' :: ' + fpasswd.value);
+        fpasswd.blur();
+        flogin.blur();
+        checkCreds(flogin.value, fpasswd.value);
+    });
+}

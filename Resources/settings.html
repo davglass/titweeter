@@ -2,30 +2,72 @@
 	<head>
 		<title>Titweeter: Settings</title>
         <link rel="stylesheet" type="text/css" href="css/twitter.css">        
-	</head>
+	    <style>
+            #login, #passwd {
+                width: 150px;
+                height: 30px;
+                float: right;
+            }
+
+            #check {
+                float: right;
+                height: 40px;
+                width: 100px;
+                margin-right: 5px;
+            }
+
+            #mask {
+                position: relative;
+                z-index: 0;
+            }
+
+            #mask .mask {
+                display: none;
+            }
+
+            #mask.disabled em {
+                opacity: .35;
+            }
+
+            #mask.disabled .mask {
+                position: absolute;
+                display: block;
+                top: 0;
+                left: 0;
+                z-index: 2;
+                height: 100%;
+                width: 100%;
+                background-color: #ccc;
+                opacity: .35;
+            }
+        </style>
+    </head>
 	<body>
         <div id="settings">
             <h2>Account Details</h2>
             <ul>
-                <li>Username: <input type="text" id="login" value=""></li>
-                <li>Password: &nbsp;<input type="password" id="passwd" value=""></li>
+                <li>Username: <div id="login"></div></li>
+                <li>Password: &nbsp;<div id="passwd"></div></li>
+                <li><div id="check"></div></li>
             </ul>
-            <h2>Options</h2>
-            <ul>
-                <li class="check">Enter key sends status <em id="enter"></em></li>
-                <li class="check">Auto expand bit.ly links <em id="bitly"></em></li>
-                <!--li class="check">Use https for requests <em id="https"></em></li-->
-                <li class="check">Send Geo data with status <em id="geo"></em></li>
-                <li class="check">Show profile images <em id="proimage"></em></li>
-            </ul>
-            <h2>App Settings</h2>
-            <ul>
-                <li id="num_items">Number of items to fetch in timeline: <strong>50</strong></li>
-                <li id="check_time">Timeline refresh interval: <strong>5</strong> Minutes</li>
-                <li id="clear_cache">Clear App Cache</li>
-            </ul>
+            <div id="mask" class="disabled">
+                <h2>Options</h2>
+                <ul>
+                    <li class="check">Enter key sends status <em id="enter"></em></li>
+                    <li class="check">Auto expand bit.ly links <em id="bitly"></em></li>
+                    <!--li class="check">Use https for requests <em id="https"></em></li-->
+                    <li class="check">Send Geo data with status <em id="geo"></em></li>
+                    <li class="check">Show profile images <em id="proimage"></em></li>
+                </ul>
+                <h2>App Settings</h2>
+                <ul>
+                    <li id="num_items">Number of items to fetch in timeline: <strong>50</strong></li>
+                    <li id="check_time">Timeline refresh interval: <strong>5</strong> Minutes</li>
+                    <li id="clear_cache">Clear Application Cache</li>
+                </ul>
+                <div class="mask"></div>
+            </div>
         </div>
-        
 		<script src="js/yui3.js"></script>
 		<script src="js/titweeter.js"></script>
 		<script src="js/settings.js"></script>

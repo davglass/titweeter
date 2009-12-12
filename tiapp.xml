@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ti:app xmlns:ti="http://ti.appcelerator.org">
-    <id>com.davglass.titweeter</id>
-    <name>titweeter</name>
-    <version>1.0.0</version>
-    <icon>default_app_logo.png</icon>
+<id>com.titweeter</id>
+<name>titweeter</name>
+<version>1.0.0</version>
+<icon>default_app_logo.png</icon>
     <persistent-wifi>false</persistent-wifi>
     <prerendered-icon>false</prerendered-icon>
     <statusbar-style>opaque</statusbar-style>

@@ -13,20 +13,27 @@ YUI().use('*', function(Yc) {
 
 var TT = {
     openDB: function() {
-        db = Titanium.Database.open('titweeter');
+        if (!db) {
+            TT.log('openDB');
+            db = Titanium.Database.open('titweeter');
 
-        //db.execute('drop table tweets');
-        db.execute('create table if not exists tweets (id integer primary key, screen_name text, type text, json text)');
+            //db.execute('drop table tweets');
+            db.execute('create table if not exists tweets (id integer primary key, screen_name text, type text, json text)');
 
-        //db.execute('delete from tweets');
+            //db.execute('delete from tweets');
+        }
     },
     closeDB: function() {
-        db.close();
+        if (db) {
+            TT.log('closeDB');
+            db.close();
+            db = null;
+        }
     },
     lastID: null,
     firstID: null,
     log: function(str) {
-        str = '<strong>[Titweeter]</strong>: <span style="color: white;">' + str + '</span>';
+        str = '<strong>[Titweeter]</strong>: <span style="color: white;">' + str + ' [' + (new Date()) + ']</span>';
         Titanium.API.log('debug', str);
     },
     alert: function(str) {
@@ -162,6 +169,12 @@ var TT = {
             login: Titanium.App.Properties.getString('LOGIN'),
             passwd: Titanium.App.Properties.getString('PASSWD')
         };
+        if (creds.login === null) {
+            creds.login = '';
+        }
+        if (creds.passwd === null) {
+            creds.passwd = '';
+        }
 
         TT.creds = creds;
 
@@ -249,7 +262,6 @@ var TT = {
         }
         // close database
         rows.close();
-        TT.closeDB();
 
         TT.hideLoading();
 
@@ -635,7 +647,6 @@ var TT = {
         TT.openDB();
         var sql = 'insert or replace into tweets (id, screen_name, type, json) values (?, ?, ?, ?)';
         db.execute(sql, info.id, info.user.screen_name, cache, Y.JSON.stringify(row));
-        TT.closeDB();
 
         return info;
         
@@ -761,8 +772,12 @@ var TT = {
 };
 
 Titanium.UI.currentWindow.addEventListener('focused', function() {
+    TT.openDB();
     TT.getCreds();
     TT.loadSettings();
+});
+Titanium.UI.currentWindow.addEventListener('unfocused', function() {
+    TT.closeDB();
 });
 
 TT.getCreds();
