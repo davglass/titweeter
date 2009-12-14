@@ -739,7 +739,11 @@ var TT = {
         if (info.favorited) {
             cls.push('favorite');
         }
-        return Y.Node.create('<li id="' + info.id + '" class="' + cls.join(' ') + '"><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + TT.filterStatus(info.message) + '</div></li>');
+        var txt = info.message;
+        if (TT.settings.time_link === '1') {
+            txt = TT.filterStatus(txt);
+        }
+        return Y.Node.create('<li id="' + info.id + '" class="' + cls.join(' ') + '"><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + txt + '</div></li>');
     },
     updateTimeStamps: function() {
         TT.log('update time stamps');
@@ -782,6 +786,7 @@ var TT = {
         https: '0',
         geo: '1',
         proimage: '1',
+        time_link: '0',
         report: '1'
     },
     loadSettings: function() {

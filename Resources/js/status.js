@@ -10,7 +10,7 @@
 
     var txt = TT.filterStatus(stat.text);
     TT.log('Status: ' + txt);
-    TT.log('Status: ' + Y.JSON.stringify(stat));
+    //TT.log('Status: ' + Y.JSON.stringify(stat));
 
     if (stat.geo) {
         var geo = Y.one('#status a.geo');
