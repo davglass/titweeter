@@ -18,8 +18,8 @@ var TT = {
             db = Titanium.Database.open('titweeter');
 
             //db.execute('drop table tweets');
-            db.execute('create table if not exists tweets (id integer primary key, screen_name text, type text, json text)');
-
+            db.execute('create table if not exists tweets (id integer, screen_name text, type text, json text)');
+            db.execute('create unique index if not exists tweetlist on tweets (id, type)');
             //db.execute('delete from tweets');
         }
     },
@@ -62,6 +62,7 @@ var TT = {
         });
         win.open();
     },
+    swipe: 0,
     loading: false,
     lastID: null,
     firstID: null,
@@ -823,6 +824,9 @@ var TT = {
             }
             //TT.log('[SETTINGS]: ' + Y.JSON.stringify(TT.settings));
         }
+    },
+    showSwipe: function(id) {
+        TT.log('Show Swipe: ' + id);
     }
 };
 
@@ -902,6 +906,12 @@ Y.delegate('click', function(e) {
 }, '#timeline', 'img');
 
 Y.delegate('click', function(e) {
+    if (TT.swipe) {
+        TT.log('[CLICK]: found swipe.');
+        TT.swipe = 0;
+        e.halt();
+        return;
+    }
     if (!e.target.test('a')) {
         var id = e.currentTarget.get('parentNode.id'),
         status = TT.getTrueStatus(TT.statuses[id]);
@@ -913,6 +923,25 @@ Y.delegate('click', function(e) {
         TT.log('Create status window..');
         
         TT.openWindow('status.html');
+    }
+}, 'body', 'div.text');
+
+
+Y.delegate('touchstart', function(e) {
+    TT.swipe = e._event.targetTouches[0].pageX;
+    TT.log('Touch Start: ' + TT.swipe);
+}, 'body', 'div.text');
+
+Y.delegate('touchend', function(e) {
+    var x = e._event.targetTouches[0].pageX;
+    TT.log('Touch End: ' + TT.swipe + ' :: ' + x);
+    if ((x > TT.swipe) && (x - TT.swipe) > 50) {
+        TT.log('Swipe Event Found..');
+        TT.swipe = (x - TT.swipe);
+        var id = e.currentTarget.get('parentNode.id');
+        TT.showSwipe(id);
+    } else {
+        TT.swipe = 0;
     }
 }, 'body', 'div.text');
 
