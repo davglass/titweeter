@@ -57,7 +57,7 @@
         var creds = TT.getCreds(),
             val = ta1.value;
         
-        Titanium.Analytics.featureEvent('post');
+        TT.ping('post');
 
         /*{{{ TODO - URL shortening
         var urls = val.match(/[A-Za-z]+:\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_:%&\?\/.=]+/g);
@@ -227,7 +227,7 @@
                 var creds = TT.getCreds();
                 var xhr = Titanium.Network.createHTTPClient();
                 xhr.onload = function() {
-                    Titanium.Analytics.featureEvent('post.twitpic');
+                    TT.ping('post.twitpic');
                     TT.log('XHR Loaded: ' + this.responseText);
                     var parser = new DOMParser();
                     var doc = parser.parseFromString(this.responseText, "text/xml"); 

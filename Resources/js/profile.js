@@ -2,7 +2,7 @@
     userFound = false;
 
     TT.log('Loading Profile Data: ' + user_id);
-    Titanium.Analytics.featureEvent('show.profile');
+    TT.ping('show.profile');
 
     TT.showLoading('Fetching Statuses');
 
@@ -45,8 +45,7 @@
         Titanium.App.Properties.setString('replyTo', userFound.screen_name);
         TT.log('Reply to: ' + userFound.screen_name);
         
-        var win = Titanium.UI.createWindow({ url: 'post.html' });
-        win.open();
+        TT.openWindow('post.html');
     }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
     
     if (userFound.following) {
@@ -55,8 +54,7 @@
             Titanium.App.Properties.setString('directTo', userFound.screen_name);
             TT.log('Direct Message To: ' + userFound.screen_name);
             
-            var win = Titanium.UI.createWindow({ url: 'post.html' });
-            win.open();
+            TT.openWindow('post.html');
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
         menu.addItem("Unfollow", function() {
             TT.log('Menu: Unfollow');

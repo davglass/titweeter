@@ -30,6 +30,39 @@ var TT = {
             db = null;
         }
     },
+    ping: function(ev, evData) {
+        TT.loadSettings();
+        if (TT.settings.report === '0') {
+            TT.log('No Reporting');
+            return;
+        }
+        if (Titanium.Network.NETWORK_NONE) {
+            return;
+        }
+        Titanium.Analytics.featureEvent(ev);
+        var p = Titanium.Platform,
+            d = {};
+
+        Y.each(p, function(v, k) {
+            d[k] = v;
+        });
+        d.ev = ev;
+        d.evData = evData;
+
+        TT.log('Sending Log Data');
+        var xhr = Titanium.Network.createHTTPClient();
+        xhr.open('GET', 'http:/'+'/api.xsive.com/?data=' + Titanium.Network.encodeURIComponent(Y.JSON.stringify(d)));
+        xhr.send(null);
+    },
+    openWindow: function(url) {
+        TT.log('openWindow: ' + url);
+        TT.ping('openWindow', url);
+        win = Titanium.UI.createWindow({
+            url: url
+        });
+        win.open();
+    },
+    loading: false,
     lastID: null,
     firstID: null,
     log: function(str) {
@@ -91,14 +124,9 @@ var TT = {
     showImage: function(url) {
         TT.log('showImage: ' + url);
         var ImageWindow = Titanium.UI.createWindow({
-            url: url,
-            hideTabBar: 'true',
-            hideNavBar: 'true'
+            url: url
         });
-        ImageWindow.open({
-            modal: true,
-            animated: true
-        });
+        ImageWindow.open();
     },
     fetchURL: function(url, cb) {
         if (Titanium.Network.NETWORK_NONE) {
@@ -218,30 +246,31 @@ var TT = {
     showProfile: function(user) {
         TT.log('Loading ShowProfile: ' + user.id);
         Titanium.App.Properties.setString('currentUser', user.id);
-        win = Titanium.UI.createWindow({ url: 'profile.html' });
-        win.open();
+        TT.openWindow('profile.html');
     },
     holder: function() {},
     statuses: {},
-    showTimeline: function() {
+    showTimeline: function(type) {
+        type = ((type) ? type : 'home_timeline');
+        TT.log('Showing timeline: ' + type);
+        TT.loading = true;
         TT.showLoading('Fetching Timeline Cache..');
         TT.openDB();
         var rows = db.execute('select count(*) as total, type from tweets group by type');
         if (rows.isValidRow()) {
-            TT.log('Found ' + rows.fieldByName('total') + ' items in cache');
             while (rows.isValidRow()) {
                 TT.log('Found ' + rows.fieldByName('total') + ' ' + rows.fieldByName('type') + ' items in cache');
                 rows.next();
             }
         };
         rows.close();
-        var rows = db.execute('select * from tweets where (type = "home_timeline") order by id desc'), 
+        var rows = db.execute('select * from tweets where (type = "' + type + '") order by id desc'), 
             v;
 
-        TT.log('Loading ' + rows.getRowCount() + ' items from cache');
+        TT.log('Loading ' + rows.getRowCount() + ' items from ' + type + ' cache');
         
         if (rows.getRowCount() == 0) {
-            TT.showTimeline_new();
+            TT.showTimeline_new(type);
             return;
         }
 
@@ -263,10 +292,12 @@ var TT = {
         // close database
         rows.close();
 
+        TT.loading = false;
         TT.hideLoading();
 
         TT.createTimelineMenu();
-        window.setTimeout(TT.updateTimelines, 200);
+        //HACK
+        window.setTimeout('TT.updateTimelines("' + type + '")', 200);
         TT.setTimer();
     },
     setTimer: function() {
@@ -276,9 +307,10 @@ var TT = {
         clearInterval(TT.checker);
     },
     showTimeline_new: function(t, q) {
+        TT.loading = true;
+        t = ((t) ? t : 'home_timeline');
         TT.log('ShowTimeline_new: ' + t + ' :: ' + q);
         var title = 'Timeline';
-        t = ((t) ? t : 'home_timeline');
         var cache = ((t) ? t : 'home_timeline');
         var qs = 'count=';
 
@@ -338,13 +370,10 @@ var TT = {
                 });
                 
                 TT.hideLoading();
+                TT.loading = false;
                 if (t === 'home_timeline') {
                     TT.setTimer();
                 }
-            },
-            onerror: function() {
-                TT.log('Status Text: ' + this.getStatusText());
-                TT.log('Response: ' + this.getResponseText());
             }
         });
         
@@ -359,7 +388,7 @@ var TT = {
             case 'favorites':
                 break;
             default:
-                Titanium.Analytics.featureEvent('new.timeline');
+                TT.ping('new.timeline');
                 TT.createTimelineMenu();
                 break;
         }
@@ -368,7 +397,7 @@ var TT = {
         var menu = Titanium.UI.createMenu();
 
         Titanium.Gesture.addEventListener('shake',function(e) {
-            Titanium.Analytics.featureEvent('shake.update');
+            TT.ping('shake.update');
             TT.updateTimelines('direct_messages');
         });
 
@@ -389,8 +418,7 @@ var TT = {
 
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
-            win = Titanium.UI.createWindow({ url: 'search.html' });
-            win.open();
+            tt.openWindow('search.html');
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
         menu.addItem("Settings", function() {
@@ -404,12 +432,11 @@ var TT = {
         var menu = Titanium.UI.createMenu();
 
         menu.addItem("Post", function() {
-            win = Titanium.UI.createWindow({ url: 'post.html' });
-            win.open();
+            TT.openWindow('post.html');
         }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
         
         Titanium.Gesture.addEventListener('shake',function(e) {
-            Titanium.Analytics.featureEvent('shake.update');
+            TT.ping('shake.update');
             TT.updateTimelines('mentions');
         }); 
 
@@ -425,14 +452,12 @@ var TT = {
 
         menu.addItem("Directs", function() {
             TT.log('Menu: Directs');
-            win = Titanium.UI.createWindow({ url: 'directs.html' });
-            win.open();
+            TT.openWindow('directs.html');
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
         
         menu.addItem("Favorites", function() {
             TT.log('Menu: Favorites');
-            win = Titanium.UI.createWindow({ url: 'favs.html' });
-            win.open();
+            TT.openWindow('favs.html');
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
         menu.addItem("Friends", function() {
@@ -442,8 +467,7 @@ var TT = {
 
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
-            win = Titanium.UI.createWindow({ url: 'search.html' });
-            win.open();
+            TT.openWindow('search.html');
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
         menu.addItem("Settings", function() {
@@ -457,12 +481,11 @@ var TT = {
         var menu = Titanium.UI.createMenu();
 
         menu.addItem("Post", function() {
-            win = Titanium.UI.createWindow({ url: 'post.html' });
-            win.open();
+            TT.openWindow('post.html');
         }/*, Titanium.UI.Android.SystemIcon.COMPOSE*/);
 
         Titanium.Gesture.addEventListener('shake',function(e) {
-            Titanium.Analytics.featureEvent('shake.update');
+            TT.ping('shake.update');
             TT.updateTimelines();
         }); 
 
@@ -473,14 +496,12 @@ var TT = {
 
         menu.addItem("Mentions", function() {
             TT.log('Menu: Mentions');
-            win = Titanium.UI.createWindow({ url: 'mentions.html' });
-            win.open();
+            TT.openWindow('mentions.html');
         }/*, Titanium.UI.Android.SystemIcon.ZOOM*/);
 
         menu.addItem("Directs", function() {
             TT.log('Menu: Directs');
-            win = Titanium.UI.createWindow({ url: 'directs.html' });
-            win.open();
+            TT.openWindow('directs.html');
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
 
         menu.addItem("Friends", function() {
@@ -490,14 +511,12 @@ var TT = {
 
         menu.addItem("Favorites", function() {
             TT.log('Menu: Favorites');
-            win = Titanium.UI.createWindow({ url: 'favs.html' });
-            win.open();
+            TT.openWindow('favs.html');
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
-            win = Titanium.UI.createWindow({ url: 'search.html' });
-            win.open();
+            TT.openWindow('search.html');
         }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
 
         menu.addItem("Settings", function() {
@@ -507,31 +526,29 @@ var TT = {
 
         menu.addItem("About", function() {
             TT.log('Menu: About');
-            win = Titanium.UI.createWindow({ url: 'about.html' });
-            win.open();
+            TT.openWindow('about.html');
         }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
 
         Titanium.UI.setMenu(menu);
     },
     showFriends: function() {
-        win = Titanium.UI.createWindow({ url: 'friends.html' });
-        win.open();
+        TT.openWindow('friends.html');
     },
     showMentions: function() {
-        Titanium.Analytics.featureEvent('show.mentions');
-        TT.showTimeline_new('mentions');
+        TT.ping('show.mentions');
+        TT.showTimeline('mentions');
     },
     showFavs: function() {
-        Titanium.Analytics.featureEvent('show.favorites');
-        TT.showTimeline_new('favorites');
+        TT.ping('show.favorites');
+        TT.showTimeline('favorites');
     },
     showDirects: function() {
-        Titanium.Analytics.featureEvent('show.directs');
-        TT.showTimeline_new('direct_messages');
+        TT.ping('show.directs');
+        TT.showTimeline('direct_messages');
     },
     showSearch: function(q) {
-        Titanium.Analytics.featureEvent('show.search');
-        TT.showTimeline_new('search', q);
+        TT.ping('show.search');
+        TT.showTimeline('search', q);
     },
     filterStatus: function(txt) {
         //Filter URL's
@@ -555,6 +572,9 @@ var TT = {
         return txt;
     },
     html_entity_decode: function(str) {
+        if (!str) {
+            str = '';
+        }
         var ta = document.createElement('textarea');
         ta.innerHTML = str.replace(/</g,"&lt;").replace(/>/g,"&gt;");
         return ta.value;
@@ -652,44 +672,64 @@ var TT = {
         
     },
     updateTimelines: function(t) {
-        TT.log('updateTimelines: ' + new Date());
-        TT.showLoading('reloading', true);
-        
-        t = ((t) ? t : 'home_timeline');
-
-        TT.updateTimeStamps();
-        
-        var url = 'statuses/' + t + '.json?count=' + TT.settings.num_items;
-            if (TT.lastID) {
-                url = 'statuses/' + t + '.json?since_id=' + TT.lastID;
+        if (!TT.loading) {
+            TT.loading = true;
+            t = ((t) ? t : 'home_timeline');
+            TT.log('updateTimelines: ' + t);
+            TT.showLoading('reloading', true);
+            
+            TT.updateTimeStamps();
+            switch (t) {
+                case 'direct_messages':
+                    title = 'Direct Messages';
+                    break;
+                case 'mentions':
+                    title = 'Mentions';
+                    t = 'statuses/' + t;
+                    break;
+                case 'favorites':
+                    title = 'Favorites';
+                    break;
+                case 'search':
+                    title = 'Search';
+                    t = 'search';
+                    qs = 'q=' + encodeURIComponent(q) + '&rpp=20&foo=';
+                    break;
+                default:
+                    t = 'statuses/' + t;
+                    break;
             }
-        TT.fetchURL(url, {
-            onload: function() {
-                TT.log('TimelineUpdateXHR Loaded');
-                var json = eval('(' + this.responseText + ')'),
-                    set = true, c = 0, row, info, data = [],
-                    f = Y.one('#timeline ul li'),
-                    ul = Y.one('#timeline ul');
 
-                for (c = 0; c < json.length; c++) {
-                    row = json[c];
-                    if (set) {
-                        TT.lastID = row.id;
-                        set = false;
-                    }
-                    TT.firstID = row.id;
-                    info = TT.formatTimelineRow(row, 'home_timeline');
-                    var li = TT.formatLI(info);
-                    ul.insertBefore(li, f);
+            
+            var url = t + '.json?count=' + TT.settings.num_items;
+                if (TT.lastID) {
+                    url =  t + '.json?since_id=' + TT.lastID;
                 }
+            TT.fetchURL(url, {
+                onload: function() {
+                    TT.log('TimelineUpdateXHR Loaded');
+                    var json = eval('(' + this.responseText + ')'),
+                        set = true, c = 0, row, info, data = [],
+                        f = Y.one('#timeline ul li'),
+                        ul = Y.one('#timeline ul');
 
-                TT.hideLoading();
-            },
-            onerror: function() {
-                TT.log('Status Text: ' + this.getStatusText());
-                TT.log('Response: ' + this.getResponseText());
-            }
-        });
+                    for (c = 0; c < json.length; c++) {
+                        row = json[c];
+                        if (set) {
+                            TT.lastID = row.id;
+                            set = false;
+                        }
+                        TT.firstID = row.id;
+                        info = TT.formatTimelineRow(row, 'home_timeline');
+                        var li = TT.formatLI(info);
+                        ul.insertBefore(li, f);
+                    }
+
+                    TT.hideLoading();
+                    TT.loading = false;
+                }
+            });
+        }
     },
     formatLI: function(info) {
         var cls = [];
@@ -714,8 +754,7 @@ var TT = {
     },
     showSettings: function() {
         TT.log('TT.showSettings');
-        var win = Titanium.UI.createWindow({ url: 'settings.html' });
-        win.open();
+        TT.openWindow('settings.html');
     },
     formatProfileHeader: function(user) {
         Y.one('#status img').set('src', user.profile_image_url).on('click', TT.showUserProfile);
@@ -742,7 +781,8 @@ var TT = {
         enter: '0',
         https: '0',
         geo: '1',
-        proimage: '1'
+        proimage: '1',
+        report: '1'
     },
     loadSettings: function() {
         if (Y && Y.each) {
@@ -796,8 +836,7 @@ Y.delegate('click', function(e) {
             break;
         case 'search':
                 Titanium.App.Properties.setString('SEARCH', href);
-                win = Titanium.UI.createWindow({ url: 'search.html' });
-                win.open();
+                TT.openWindow('search.html');
                 break;
         case 'url':
             if (href.indexOf('twitpic.com') !== -1) {
@@ -858,8 +897,7 @@ Y.delegate('click', function(e) {
 
         TT.log('Create status window..');
         
-        var win = Titanium.UI.createWindow({ url: 'status.html' });
-        win.open();
+        TT.openWindow('status.html');
     }
 }, 'body', 'div.text');
 

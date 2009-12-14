@@ -62,7 +62,8 @@
                 <h2>App Settings</h2>
                 <ul>
                     <li id="num_items">Number of items to fetch in timeline: <strong>50</strong></li>
-                    <li id="check_time">Timeline refresh interval: <strong>5</strong> Minutes</li>
+                    <!--li id="check_time">Timeline refresh interval: <strong>5</strong> Minutes</li-->
+                    <li class="check">Report usage statistics <em id="report"></em></li>
                     <li id="clear_cache">Clear Application Cache</li>
                 </ul>
                 <div class="mask"></div>
@@ -71,5 +72,8 @@
 		<script src="js/yui3.js"></script>
 		<script src="js/titweeter.js"></script>
 		<script src="js/settings.js"></script>
+        <script>
+            TT.ping('windowLoad', 'settings.html');
+        </script>
 	</body>
 </html>

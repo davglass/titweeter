@@ -4,7 +4,7 @@
     var stat = TT.formatTimelineRow(Titanium.App.Properties.getList('currentStatusList'));
     document.title = 'Titweeter: Status: ' + stat.user.name;
 
-    Titanium.Analytics.featureEvent('show.status');
+    TT.ping('show.status');
 
     TT.formatProfileHeader(stat.user);
 
@@ -69,8 +69,7 @@
         TT.hideLoading();
         
         TT.log('Create status window..');
-        var win = Titanium.UI.createWindow({ url: 'status.html' });
-        win.open();
+        TT.openWindow('status.html');
     };
 
     var menu = Titanium.UI.createMenu();
@@ -82,8 +81,7 @@
         TT.log('Reply to: ' + stat.user.screen_name);
         TT.log('Reply to: ' + stat.id);
         
-        var win = Titanium.UI.createWindow({ url: 'post.html' });
-        win.open();
+        TT.openWindow('post.html');   
     }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
     
     menu.addItem("Retweet", function() {
@@ -92,8 +90,7 @@
         Titanium.App.Properties.setString('retweetStatus', 'RT @' + stat.user.screen_name + ' ' + stat.message);
         TT.log('Retweet: ' + stat.id);
         
-        var win = Titanium.UI.createWindow({ url: 'post.html' });
-        win.open();
+        TT.openWindow('post.html');
     }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
     
     if (stat.user.following) {
@@ -102,8 +99,7 @@
             Titanium.App.Properties.setString('directTo', stat.user.screen_name);
             TT.log('Direct Message To: ' + stat.user.screen_name);
             
-            var win = Titanium.UI.createWindow({ url: 'post.html' });
-            win.open();
+            TT.openWindow('post.html');   
         }/*, Titanium.UI.Android.SystemIcon.SEND*/);
         menu.addItem("Unfollow", function() {
             TT.log('Menu: Unfollow');
