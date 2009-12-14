@@ -123,10 +123,20 @@ var TT = {
     },
     showImage: function(url) {
         TT.log('showImage: ' + url);
+        /*
         var ImageWindow = Titanium.UI.createWindow({
             url: url
         });
         ImageWindow.open();
+        */
+		var wv1 = Titanium.UI.createImageView({
+            url: url, canScale: true
+        });
+        wv1.addEventListener('click', function() {
+            Titanium.UI.currentWindow.hideView(wv1);
+        });
+        Titanium.UI.currentWindow.addView(wv1);
+        Titanium.UI.currentWindow.showView(wv1);
     },
     fetchURL: function(url, cb) {
         if (Titanium.Network.NETWORK_NONE) {
