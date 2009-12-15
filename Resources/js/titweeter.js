@@ -825,8 +825,29 @@ var TT = {
             //TT.log('[SETTINGS]: ' + Y.JSON.stringify(TT.settings));
         }
     },
-    showSwipe: function(id) {
-        TT.log('Show Swipe: ' + id);
+    makeSwipeMenu: function() {
+        TT.log('makeSwipeMenu');
+        if (!TT.swipeMenu) {
+            TT.swipeMenu = Y.Node.create('<div id="swipemenu">Reply</div>');
+            Y.one('body').prepend(TT.swipeMenu);
+        }
+    },
+    swipeMenu: null,
+    showSwipe: function(tar) {
+        TT.log('Show Swipe: ' + tar.get('id'));
+        TT.makeSwipeMenu();
+        var xy = tar.getXY(),
+            stat = TT.statuses[tar.get('id')],
+            m = TT.swipeMenu;
+        
+        TT.log('setStyles');
+        m.setStyles({
+            display: 'block',
+            height: tar.get('offsetHeight'),
+            width: tar.get('offsetWidth')
+        }).set('innerHTML', 'Reply to: ' + stat.name);
+        TT.log('setXY');
+        m.setXY(xy);
     }
 };
 
@@ -938,8 +959,7 @@ Y.delegate('touchend', function(e) {
     if ((x > TT.swipe) && (x - TT.swipe) > 50) {
         TT.log('Swipe Event Found..');
         TT.swipe = (x - TT.swipe);
-        var id = e.currentTarget.get('parentNode.id');
-        TT.showSwipe(id);
+        TT.showSwipe(e.currentTarget.get('parentNode'));
     } else {
         TT.swipe = 0;
     }
