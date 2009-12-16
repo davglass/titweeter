@@ -193,6 +193,7 @@ var TT = {
         TT.log('URL: ' + url);
         TT.log('Send: ' + o);
         xhr.open(meth, url);
+        xhr.setRequestHeader("Content-Type", "Content-Type: text/plain; charset=utf-8");
         xhr.send(o);
     },
     stringifyObject: function(o) {
@@ -375,7 +376,7 @@ var TT = {
                 Y.each(data, function(v) {
                     var cls = ((v.me) ? ' class="mine"' : '');
                     //TT.log('Header: ' + v.header);
-                    var li = Y.Node.create('<li id="' + v.id + '" ' + cls + '><h2>' + v.header + '</h2><img src="' + v.photo + '"><div class="text">' + TT.filterStatus(v.message) + '</div></li>');
+                    var li = TT.formatLI(v);
                     ul.append(li);
                 });
                 
@@ -750,7 +751,7 @@ var TT = {
             cls.push('favorite');
         }
         var txt = info.message;
-        if (TT.settings.time_link === '1') {
+        if (TT.settings.time_link == '1') {
             txt = TT.filterStatus(txt);
         }
         return Y.Node.create('<li id="' + info.id + '" class="' + cls.join(' ') + '"><h2>' + info.header + '</h2><img src="' + info.photo + '"><div class="text">' + txt + '</div></li>');
