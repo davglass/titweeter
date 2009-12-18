@@ -53,7 +53,6 @@ Y.one('#num_items').on('click', function(e) {
 });
 
 
-/*
 Y.one('#check_time').on('click', function(e) {
     // create dialog
     var dialog = Titanium.UI.createOptionDialog(),
@@ -93,10 +92,9 @@ Y.one('#check_time').on('click', function(e) {
     // show dialog
     dialog.show();
 });
-*/
 
 Y.one('#num_items strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_NUM_ITEMS'));
-//Y.one('#check_time strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_CHECK_TIME'));
+Y.one('#check_time strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_CHECK_TIME'));
 
 
 var lis = Y.all('#settings li.check');

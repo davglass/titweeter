@@ -40,6 +40,9 @@ var TT = {
             return;
         }
         Titanium.Analytics.featureEvent(ev);
+        
+        return;
+        //This doesn't seem to contain any information.. Bummer..
         var p = Titanium.Platform,
             d = {};
 
@@ -193,7 +196,7 @@ var TT = {
         TT.log('URL: ' + url);
         TT.log('Send: ' + o);
         xhr.open(meth, url);
-        xhr.setRequestHeader("Content-Type", "Content-Type: text/plain; charset=utf-8");
+        //xhr.setRequestHeader("Content-Type", "Content-Type: text/plain; charset=utf-8");
         xhr.send(o);
     },
     stringifyObject: function(o) {
@@ -309,10 +312,10 @@ var TT = {
         TT.createTimelineMenu();
         //HACK
         window.setTimeout('TT.updateTimelines("' + type + '")', 200);
-        TT.setTimer();
+        TT.setTimer(type);
     },
-    setTimer: function() {
-        TT.checker = window.setInterval(TT.updateTimelines, ((TT.settings.check_time * 1000) * 60));
+    setTimer: function(type) {
+        TT.checker = window.setInterval('TT.updateTimelines("' + type + '")', ((TT.settings.check_time * 1000) * 60));
     },
     cancelTimer: function() {
         clearInterval(TT.checker);
@@ -382,9 +385,7 @@ var TT = {
                 
                 TT.hideLoading();
                 TT.loading = false;
-                if (t === 'home_timeline') {
-                    TT.setTimer();
-                }
+                TT.setTimer(t);
             }
         });
         
@@ -790,6 +791,7 @@ var TT = {
         TT.showProfile({ id: stat.user.screen_name });
     },
     settings: {
+        native_retweet: '1',
         check_time: 15,
         num_items: 50,
         bitly: '1',

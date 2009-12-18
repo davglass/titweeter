@@ -42,16 +42,15 @@
     
     var ta1 = Titanium.UI.createTextArea({
         id: 'post_status', 
-        value: val,
+        value: TT.html_entity_decode(val),
         autocorrect: true,
         borderStyle: Titanium.UI.INPUT_BORDERSTYLE_BEZEL,
-        returnKeyType: Titanium.UI.RETURNKEY_SEND
+        keyboardType: Titanium.UI.KEYBOARD_ASCII, 
+        returnKeyType: Titanium.UI.RETURNKEY_DONE,
+        backgroundColor: '#ffffff',
+        color: '#000000'
     });
     
-    //var ta1 = Y.one('#post_status');
-    //ta1.set('value', val);
-    
-
     var postStatusReal = function(e) {
         TT.log('postStatusReal: ' + ta1.value);
         var creds = TT.getCreds(),
@@ -114,21 +113,6 @@
             c.text = c.status;
             delete c.status;
             TT.fetchURL('direct_messages/new.json', {
-                type: 'POST',
-                data: c,
-                onload: function() {
-                    TT.hideLoading();
-                    Titanium.UI.currentWindow.close();
-                },
-                onerror: function() {
-                    TT.log('Status Text: ' + this.getStatusText());
-                    TT.log('Response: ' + this.getResponseText());
-                }
-            });
-        } else if (retweetStatus && (retweetStatus == ta1.value)) {
-            TT.showLoading('Posting Retweet...');
-            TT.log('Retweet status == textarea.value: Retweeting..');
-            TT.fetchURL('statuses/retweet/' + retweetID + '.json', {
                 type: 'POST',
                 data: c,
                 onload: function() {

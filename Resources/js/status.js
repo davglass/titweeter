@@ -85,12 +85,21 @@
     }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
     
     menu.addItem("Retweet", function() {
-        
-        Titanium.App.Properties.setString('retweetID', stat.id);
-        Titanium.App.Properties.setString('retweetStatus', 'RT @' + stat.user.screen_name + ' ' + stat.message);
-        TT.log('Retweet: ' + stat.id);
-        
-        TT.openWindow('post.html');
+        if (TT.settings.native_retweet == '1') {
+            TT.showLoading('Posting Retweet...');
+            TT.fetchURL('statuses/retweet/' + stat.id + '.json', {
+                type: 'POST',
+                onload: function() {
+                    TT.hideLoading();
+                    TT.alert('Retweeted');
+                }
+            });
+        } else {
+            Titanium.App.Properties.setString('retweetID', stat.id);
+            Titanium.App.Properties.setString('retweetStatus', 'RT @' + stat.user.screen_name + ' ' + stat.message);
+            TT.log('Retweet: ' + stat.id);
+            TT.openWindow('post.html');
+        }
     }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
     
     if (stat.user.following) {
