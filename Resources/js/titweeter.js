@@ -130,18 +130,8 @@ var TT = {
             TT._loading.hide();
         }
     },
-    setCreds: function(l, p) {
-        Titanium.App.Properties.setString('LOGIN', l);
-        Titanium.App.Properties.setString('PASSWD', p);
-    },
     showImage: function(url) {
         TT.log('showImage: ' + url);
-        /*
-        var ImageWindow = Titanium.UI.createWindow({
-            url: url
-        });
-        ImageWindow.open();
-        */
 		var wv1 = Titanium.UI.createImageView({
             url: url, canScale: true
         });
@@ -208,8 +198,8 @@ var TT = {
         TT.log('Send: ' + o);
         xhr.open(meth, url);
         if (meth.toUpperCase() === 'GET') {
-            TT.log('Adding content-type: utf-8');
-            xhr.setRequestHeader("Content-Type", "text/plain; charset=utf-8");
+            //TT.log('Adding content-type: utf-8');
+            //xhr.setRequestHeader("Content-Type", "text/plain; charset=utf-8");
         }
         xhr.send(o);
     },
@@ -220,16 +210,25 @@ var TT = {
         }
         return str;
     },
+    setCreds: function(l, p, id) {
+        Titanium.App.Properties.setString('LOGIN', l);
+        Titanium.App.Properties.setString('PASSWD', p);
+        Titanium.App.Properties.setString('USERID', id);
+    },
     getCreds: function() {
         var creds = {
             login: Titanium.App.Properties.getString('LOGIN'),
-            passwd: Titanium.App.Properties.getString('PASSWD')
+            passwd: Titanium.App.Properties.getString('PASSWD'),
+            userid: Titanium.App.Properties.getString('USERID')
         };
         if (creds.login === null) {
             creds.login = '';
         }
         if (creds.passwd === null) {
             creds.passwd = '';
+        }
+        if (creds.userid === null) {
+            creds.userid = '';
         }
 
         TT.creds = creds;
@@ -341,7 +340,8 @@ var TT = {
     showTimeline_new: function(t, q) {
         TT.loading = true;
         t = ((t) ? t : 'home_timeline');
-        TT.log('ShowTimeline_new: ' + t + ' :: ' + q);
+        var type = t;
+        TT.log('ShowTimeline_new: ' + type + ' :: ' + q);
         var title = 'Timeline';
         var cache = ((t) ? t : 'home_timeline');
         var qs = 'count=';
@@ -403,7 +403,7 @@ var TT = {
                 
                 TT.hideLoading();
                 TT.loading = false;
-                TT.setTimer(t);
+                TT.setTimer(type);
             }
         });
         

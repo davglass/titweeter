@@ -155,7 +155,7 @@ var checkCreds = function(l, p) {
                     //TT.openDB();
                     //db.execute('delete from tweets');
                     TT.log('setCreds..');
-                    TT.setCreds(login, passwd);
+                    TT.setCreds(json.screen_name, passwd, json.id);
                     Y.one('#check').get('parentNode').set('innerHTML', '<small>To reset, clear the App Cache.</small>');
                     Y.one('#mask').removeClass('disabled');
                     Y.one('#login').get('parentNode').set('innerHTML', 'Username: ' + l);
