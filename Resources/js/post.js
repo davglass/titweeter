@@ -47,6 +47,7 @@
         borderStyle: Titanium.UI.INPUT_BORDERSTYLE_BEZEL,
         keyboardType: Titanium.UI.KEYBOARD_ASCII, 
         returnKeyType: Titanium.UI.RETURNKEY_DONE,
+        capitalizeType: Titanium.UI.CAPITALIZE_SENTENCES,
         backgroundColor: '#ffffff',
         color: '#000000'
     });
