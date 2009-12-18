@@ -31,6 +31,7 @@
         button1.addEventListener('click', function() {
             TT.showLoading('Fetching Status');
             TT.log('Load New Status Window');
+            /*
             TT.log('Checking Status Cache');
             TT.openDB();
             var rows = db.execute('select * from tweets where (id = ' + stat.in_reply_to_status_id + ')');
@@ -40,6 +41,7 @@
                 showStatus(json);
                 rows.next();
             } else {
+            */
                 var creds = TT.getCreds();
                 var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/show/" + stat.in_reply_to_status_id + '.json';
 
@@ -52,7 +54,7 @@
                 };
                 xhr.open("GET",url);
                 xhr.send();
-            }
+            //}
         });
         
     }

@@ -116,15 +116,16 @@ Y.one('#clear_cache').on('click', function(e) {
     a.addEventListener('click',function(e) {
         if (e.index == 0) {
             TT.showLoading('Clearing Application Settings');
-            TT.openDB();
-            db.execute('delete from tweets');
-            db.execute('drop table tweets');
+
+            //TT.openDB();
+            //db.execute('delete from tweets');
+            //db.execute('drop table tweets');
             Titanium.App.Properties.setString('LOGIN', '');
             Titanium.App.Properties.setString('PASSWD', '');
             Titanium.App.Properties.setString('SETTING_NUM_ITEMS', 50);
 
             TT.alert('Application Cache Cleared.');
-            Titanium.UI.currentWindow.close();
+            //Titanium.UI.currentWindow.close();
         }
     });
 
@@ -151,8 +152,8 @@ var checkCreds = function(l, p) {
                     TT.showError(json.error);
                 } else {
                     TT.ping('settings.creds'); 
-                    TT.openDB();
-                    db.execute('delete from tweets');
+                    //TT.openDB();
+                    //db.execute('delete from tweets');
                     TT.log('setCreds..');
                     TT.setCreds(login, passwd);
                     Y.one('#check').get('parentNode').set('innerHTML', '<small>To reset, clear the App Cache.</small>');

@@ -13,22 +13,32 @@ YUI().use('*', function(Yc) {
 
 var TT = {
     openDB: function() {
+        /*
         if (!db) {
             TT.log('openDB');
             db = Titanium.Database.open('titweeter');
+            var version = Titanium.App.getVersion();
 
-            //db.execute('drop table tweets');
+            var cls = Titanium.App.Properties.getBool('UPDATE_' + version);
+            if (!cls) {
+                Titanium.App.Properties.setBool('UPDATE_' + version, true);
+                TT.log('App Update, dropping cache table');
+                db.execute('drop table tweets');
+            }
             db.execute('create table if not exists tweets (id integer primary key, screen_name text, type text, json text)');
 
             //db.execute('delete from tweets');
         }
+        */
     },
     closeDB: function() {
+        /*
         if (db) {
             TT.log('closeDB');
             db.close();
             db = null;
         }
+        */
     },
     ping: function(ev, evData) {
         TT.loadSettings();
@@ -176,6 +186,7 @@ var TT = {
         }
 
         xhr.onerror = function() {
+            TT.loading = false;
             var err = this.getStatusText();
             TT.log('[ERROR]: Status Text: ' + err);
             switch (err) {
@@ -196,7 +207,10 @@ var TT = {
         TT.log('URL: ' + url);
         TT.log('Send: ' + o);
         xhr.open(meth, url);
-        //xhr.setRequestHeader("Content-Type", "Content-Type: text/plain; charset=utf-8");
+        if (meth.toUpperCase() === 'GET') {
+            TT.log('Adding content-type: utf-8');
+            xhr.setRequestHeader("Content-Type", "text/plain; charset=utf-8");
+        }
         xhr.send(o);
     },
     stringifyObject: function(o) {
@@ -264,8 +278,11 @@ var TT = {
     },
     holder: function() {},
     statuses: {},
-    showTimeline: function(type) {
+    showTimeline: function(type, q) {
         type = ((type) ? type : 'home_timeline');
+        TT.showTimeline_new(type, q);
+        return;
+        /*
         TT.log('Showing timeline: ' + type);
         TT.loading = true;
         TT.showLoading('Fetching Timeline Cache..');
@@ -313,6 +330,7 @@ var TT = {
         //HACK
         window.setTimeout('TT.updateTimelines("' + type + '")', 200);
         TT.setTimer(type);
+        */
     },
     setTimer: function(type) {
         TT.checker = window.setInterval('TT.updateTimelines("' + type + '")', ((TT.settings.check_time * 1000) * 60));
@@ -676,10 +694,11 @@ var TT = {
         if (!cache) {
             cache = 'status';
         }
+        /*
         TT.openDB();
         var sql = 'insert or replace into tweets (id, screen_name, type, json) values (?, ?, ?, ?)';
         db.execute(sql, info.id, info.user.screen_name, cache, Y.JSON.stringify(row));
-
+        */
         return info;
         
     },
