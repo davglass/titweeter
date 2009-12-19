@@ -636,7 +636,9 @@ var TT = {
         
         if (TT.lastCheck) {
             TT.log('checkTimeline: ' + ((TT.lastCheck + check_time) > current_time));
-            TT.updateTimelines(TT.currentType);
+            if ((TT.lastCheck + check_time) > current_time) {
+                TT.updateTimelines(TT.currentType);
+            }
         }
     },
     updateTimelines: function(t, old) {

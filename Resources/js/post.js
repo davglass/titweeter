@@ -205,40 +205,61 @@
     });
     
     pic_button.addEventListener('click', function() {
-        Titanium.Media.openPhotoGallery({
-            success: function(image, details) {
-                TT.showLoading('Posting Image...');
-                TT.log('Image From Gallery');
-                var creds = TT.getCreds();
-                var xhr = Titanium.Network.createHTTPClient();
-                xhr.onload = function() {
-                    TT.ping('post.twitpic');
-                    TT.log('XHR Loaded: ' + this.responseText);
-                    var parser = new DOMParser();
-                    var doc = parser.parseFromString(this.responseText, "text/xml"); 
-                    var rsp = doc.getElementsByTagName('mediaurl')[0];
-                    TT.log('URL: ' + rsp.firstChild.nodeValue);
-                    ta1.value += ' ' + rsp.firstChild.nodeValue;
-                    TT.hideLoading();
-                    ta1.focus();
-                };
-                xhr.open('POST', 'http:/'+'/twitpic.com/api/upload');
-                xhr.send({
-                    media: image,
-                    username: creds.login,
-                    password: creds.passwd
-                });
-            },
-            error: function(e) {
-                TT.showError(e.message);
-            },
-            cancel: function() {
-                TT.log('Cancel Gallery');
-                //no op
-            },
-            allowImageEditing: true
-        }); 
+        var dialog = Titanium.UI.createOptionDialog();
+        dialog.setOptions(['Take Picture', 'Photo Gallery']);
+        dialog.setTitle('Picture Options');
+
+        dialog.addEventListener('click', function(e) {
+            switch(e.index) {
+                case 0:
+                    Titanium.Media.showCamera({
+                        success: postImage,
+                        error: function(e) {
+                            TT.showError(e.message);
+                        },
+                        allowImageEditing: true
+                    });
+                    break;
+                case 1:
+                    Titanium.Media.openPhotoGallery({
+                        success: postImage,
+                        error: function(e) {
+                            TT.showError(e.message);
+                        },
+                        allowImageEditing: true
+                    });
+                    break;
+            }
+        });
+        dialog.show();
     });
+    
+    var postImage = function(image) {
+        TT.showLoading('Posting Image...');
+        var creds = TT.getCreds();
+        var xhr = Titanium.Network.createHTTPClient();
+        xhr.onload = function() {
+            TT.ping('post.twitpic');
+            TT.log('XHR Loaded: ' + this.responseText);
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(this.responseText, "text/xml"); 
+            var rsp = doc.getElementsByTagName('mediaurl')[0];
+            TT.log('URL: ' + rsp.firstChild.nodeValue);
+            if (ta1.value == '') {
+                ta1.value = rsp.firstChild.nodeValue + ' ';
+            } else {
+                ta1.value += ' ' + rsp.firstChild.nodeValue;
+            }
+            TT.hideLoading();
+            ta1.focus();
+        };
+        xhr.open('POST', 'http:/'+'/twitpic.com/api/upload');
+        xhr.send({
+            media: image,
+            username: creds.login,
+            password: creds.passwd
+        });
+    };
     
 
     window.onload = function() {
