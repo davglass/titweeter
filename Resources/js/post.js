@@ -31,7 +31,6 @@
     }
 
     if (directTo) {
-        
         TT.log('[POST]: directTo: ' + directTo);
 
         Titanium.App.Properties.setString('directTo', null);
