@@ -204,8 +204,10 @@
     });
     
     pic_button.addEventListener('click', function() {
+        /* Doesn't Work
+        * showCamera doesn't work on Android
         var dialog = Titanium.UI.createOptionDialog();
-        dialog.setOptions(['Take Picture', 'Photo Gallery']);
+        dialog.setOptions(['Take Picture', 'Open Photo Gallery']);
         dialog.setTitle('Picture Options');
 
         dialog.addEventListener('click', function(e) {
@@ -216,7 +218,7 @@
                         error: function(e) {
                             TT.showError(e.message);
                         },
-                        allowImageEditing: true
+                        allowImageEditing: false
                     });
                     break;
                 case 1:
@@ -225,12 +227,20 @@
                         error: function(e) {
                             TT.showError(e.message);
                         },
-                        allowImageEditing: true
+                        allowImageEditing: false
                     });
                     break;
             }
         });
         dialog.show();
+        */
+        Titanium.Media.openPhotoGallery({
+            success: postImage,
+            error: function(e) {
+                TT.showError(e.message);
+            },
+            allowImageEditing: false
+        });
     });
     
     var postImage = function(image) {
