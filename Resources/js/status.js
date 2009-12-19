@@ -31,30 +31,18 @@
         button1.addEventListener('click', function() {
             TT.showLoading('Fetching Status');
             TT.log('Load New Status Window');
-            /*
-            TT.log('Checking Status Cache');
-            TT.openDB();
-            var rows = db.execute('select * from tweets where (id = ' + stat.in_reply_to_status_id + ')');
-            if (rows.isValidRow()) {
-                TT.log('Found Status in Cache');
-                json = Y.JSON.parse(rows.fieldByName('json'));
+            var creds = TT.getCreds();
+            var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/show/" + stat.in_reply_to_status_id + '.json';
+
+            TT.log('URL: ' + url);
+
+            var xhr = Titanium.Network.createHTTPClient();
+            xhr.onload = function() {
+                var json = eval('('+this.responseText+')');
                 showStatus(json);
-                rows.next();
-            } else {
-            */
-                var creds = TT.getCreds();
-                var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/show/" + stat.in_reply_to_status_id + '.json';
-
-                TT.log('URL: ' + url);
-
-                var xhr = Titanium.Network.createHTTPClient();
-                xhr.onload = function() {
-                    var json = eval('('+this.responseText+')');
-                    showStatus(json);
-                };
-                xhr.open("GET",url);
-                xhr.send();
-            //}
+            };
+            xhr.open("GET",url);
+            xhr.send();
         });
         
     }

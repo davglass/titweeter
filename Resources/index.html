@@ -7,10 +7,12 @@
 	</head>
 	<body>
         <div id="timeline"><ul></ul></div>
+        <div id="more">Load More</div>
 		<script src="js/yui3.js"></script>
 		<script src="js/titweeter.js"></script>
         <script>
         TT.log('Fetching from accounts');
+        
         var creds = TT.getCreds(), login=false;
 
         if (creds.login && creds.passwd) {
@@ -38,9 +40,7 @@
                 var creds = TT.getCreds();
                 if (creds.login && creds.passwd) {
                     TT.log('Timeline focused');
-                    if (TT.lastID) {
-                        window.setTimeout(TT.updateTimelines, 200);
-                    }
+                    TT.checkTimeline();
                 }
             }
         });

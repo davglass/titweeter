@@ -12,34 +12,6 @@ YUI().use('*', function(Yc) {
 
 
 var TT = {
-    openDB: function() {
-        /*
-        if (!db) {
-            TT.log('openDB');
-            db = Titanium.Database.open('titweeter');
-            var version = Titanium.App.getVersion();
-
-            var cls = Titanium.App.Properties.getBool('UPDATE_' + version);
-            if (!cls) {
-                Titanium.App.Properties.setBool('UPDATE_' + version, true);
-                TT.log('App Update, dropping cache table');
-                db.execute('drop table tweets');
-            }
-            db.execute('create table if not exists tweets (id integer primary key, screen_name text, type text, json text)');
-
-            //db.execute('delete from tweets');
-        }
-        */
-    },
-    closeDB: function() {
-        /*
-        if (db) {
-            TT.log('closeDB');
-            db.close();
-            db = null;
-        }
-        */
-    },
     ping: function(ev, evData) {
         TT.loadSettings();
         if (TT.settings.report === '0') {
@@ -79,8 +51,16 @@ var TT = {
     lastID: null,
     firstID: null,
     log: function(str) {
-        str = '<strong>[Titweeter]</strong>: <span style="color: white;">' + str + ' [' + (new Date()) + ']</span>';
+        var today = new Date(),
+            h = today.getHours(),
+            m = TT.checkTime(today.getMinutes()),
+            s = TT.checkTime(today.getSeconds());
+
+        str = '<strong>[Titweeter (' + h + ':' + m + ':' + s + ')]</strong>: <span style="color: white;">' + str + '</span>';
         Titanium.API.log('debug', str);
+    },
+    checkTime: function(i) {
+        return ((i < 10) ? '0' + i : i);
     },
     alert: function(str) {
         TT.hideLoading();
@@ -277,71 +257,18 @@ var TT = {
     },
     holder: function() {},
     statuses: {},
-    showTimeline: function(type, q) {
-        type = ((type) ? type : 'home_timeline');
-        TT.showTimeline_new(type, q);
-        return;
-        /*
-        TT.log('Showing timeline: ' + type);
-        TT.loading = true;
-        TT.showLoading('Fetching Timeline Cache..');
-        TT.openDB();
-        var rows = db.execute('select count(*) as total, type from tweets group by type');
-        if (rows.isValidRow()) {
-            while (rows.isValidRow()) {
-                TT.log('Found ' + rows.fieldByName('total') + ' ' + rows.fieldByName('type') + ' items in cache');
-                rows.next();
-            }
-        };
-        rows.close();
-        var rows = db.execute('select * from tweets where (type = "' + type + '") order by id desc'), 
-            v;
-
-        TT.log('Loading ' + rows.getRowCount() + ' items from ' + type + ' cache');
-        
-        if (rows.getRowCount() == 0) {
-            TT.showTimeline_new(type);
-            return;
-        }
-
-        var ul = Y.one('#timeline ul');
-        
-        while (rows.isValidRow()) {
-            //TT.log('Loading Cache: ' + rows.fieldByName('id') + ' :: ' + rows.fieldByName('screen_name'));
-            v = TT.formatTimelineRow(Y.JSON.parse(rows.fieldByName('json')));
-            var li = TT.formatLI(v);
-            ul.append(li);
-            
-            if (!TT.lastID) {
-                TT.lastID = v.id;
-            }
-            TT.firstID = v.id;
-            rows.next();
-            TT.statuses[v.id] = v;
-        }
-        // close database
-        rows.close();
-
-        TT.loading = false;
-        TT.hideLoading();
-
-        TT.createTimelineMenu();
-        //HACK
-        window.setTimeout('TT.updateTimelines("' + type + '")', 200);
-        TT.setTimer(type);
-        */
-    },
     setTimer: function(type) {
         TT.checker = window.setInterval('TT.updateTimelines("' + type + '")', ((TT.settings.check_time * 1000) * 60));
     },
     cancelTimer: function() {
         clearInterval(TT.checker);
     },
-    showTimeline_new: function(t, q) {
+    showTimeline: function(t, q) {
+        TT.lastCheck = (new Date()).getTime();
         TT.loading = true;
         t = ((t) ? t : 'home_timeline');
         var type = t;
-        TT.log('ShowTimeline_new: ' + type + ' :: ' + q);
+        TT.log('ShowTimeline: ' + type + ' :: ' + q);
         var title = 'Timeline';
         var cache = ((t) ? t : 'home_timeline');
         var qs = 'count=';
@@ -404,6 +331,10 @@ var TT = {
                 TT.hideLoading();
                 TT.loading = false;
                 TT.setTimer(type);
+                TT.currentType = type;
+                if (Y.one('#more')) {
+                    Y.one('#more').setStyle('display', 'block');
+                }
             }
         });
         
@@ -694,21 +625,32 @@ var TT = {
         if (!cache) {
             cache = 'status';
         }
-        /*
-        TT.openDB();
-        var sql = 'insert or replace into tweets (id, screen_name, type, json) values (?, ?, ?, ?)';
-        db.execute(sql, info.id, info.user.screen_name, cache, Y.JSON.stringify(row));
-        */
         return info;
         
     },
-    updateTimelines: function(t) {
+    lastCheck: 0,
+    checkTimeline: function() {
+        //var check_time = (TT.settings.check_time * 60),
+        var check_time = (2 * 60),
+            current_time = (new Date()).getTime();
+        
+        if (TT.lastCheck) {
+            TT.log('checkTimeline: ' + ((TT.lastCheck + check_time) > current_time));
+            TT.updateTimelines(TT.currentType);
+        }
+    },
+    updateTimelines: function(t, old) {
         if (!TT.loading) {
+            TT.lastCheck = (new Date()).getTime();
+
             TT.loading = true;
             t = ((t) ? t : 'home_timeline');
             TT.log('updateTimelines: ' + t);
-            TT.showLoading('reloading', true);
-            
+            if (old) {
+                TT.showLoading('Fetching Older Statuses');
+            } else {
+                TT.showLoading('reloading', true);
+            }
             TT.updateTimeStamps();
             switch (t) {
                 case 'direct_messages':
@@ -732,10 +674,19 @@ var TT = {
             }
 
             
-            var url = t + '.json?count=' + TT.settings.num_items;
-                if (TT.lastID) {
-                    url =  t + '.json?since_id=' + TT.lastID;
-                }
+            var url = t + '.json?';
+            if (old && TT.firstID) {
+                var first_id = Y.one('#timeline ul li:last-child').get('id');
+                TT.log('FirstID: ' + first_id + ' :: ' + (parseInt(first_id, 10) - 1));
+                url +=  'max_id=' + (parseInt(first_id, 10) - 1);
+            } else if (TT.lastID) {
+                var last_id = Y.one('#timeline ul li:first-child').get('id');
+                TT.log('LastID: ' + last_id + ' :: ' + TT.lastID);
+                url +=  'since_id=' + last_id;
+            } else {
+                url += 'count=' + TT.settings.num_items;
+            }
+
             TT.fetchURL(url, {
                 onload: function() {
                     TT.log('TimelineUpdateXHR Loaded');
@@ -743,7 +694,9 @@ var TT = {
                         set = true, c = 0, row, info, data = [],
                         f = Y.one('#timeline ul li'),
                         ul = Y.one('#timeline ul');
-
+                    if (old) {
+                        set = false;
+                    }
                     for (c = 0; c < json.length; c++) {
                         row = json[c];
                         if (set) {
@@ -753,7 +706,11 @@ var TT = {
                         TT.firstID = row.id;
                         info = TT.formatTimelineRow(row, 'home_timeline');
                         var li = TT.formatLI(info);
-                        ul.insertBefore(li, f);
+                        if (old) {
+                            ul.append(li);
+                        } else {
+                            ul.insertBefore(li, f);
+                        }
                     }
 
                     TT.hideLoading();
@@ -849,12 +806,8 @@ var TT = {
 };
 
 Titanium.UI.currentWindow.addEventListener('focused', function() {
-    TT.openDB();
     TT.getCreds();
     TT.loadSettings();
-});
-Titanium.UI.currentWindow.addEventListener('unfocused', function() {
-    TT.closeDB();
 });
 
 TT.getCreds();
@@ -938,3 +891,9 @@ Y.delegate('click', function(e) {
     }
 }, 'body', 'div.text');
 
+if (Y.one('#more')) {
+    Y.one('#more').on('click', function() {
+        TT.log('Fetch ' + TT.settings.num_items + ' from ' + TT.currentType);
+        TT.updateTimelines(TT.currentType, true);
+    });
+}
