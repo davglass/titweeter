@@ -19,6 +19,7 @@
                 info = TT.formatTimelineRow(json[c]);
                 if (!userFound) {
                     userFound = json[c].user;
+                    fetchMenu();
                     TT.formatProfileHeader(json[c].user);
                     document.title += ': ' + json[c].user.name;
 
@@ -46,53 +47,68 @@
         TT.log('Reply to: ' + userFound.screen_name);
         
         TT.openWindow('post.html');
-    }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
+    });
     
-    if (userFound.following) {
-        menu.addItem("Direct Message", function() {
-            TT.log('Menu: Direct Message');
-            Titanium.App.Properties.setString('directTo', userFound.screen_name);
-            TT.log('Direct Message To: ' + userFound.screen_name);
-            
-            TT.openWindow('post.html');
-        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-        menu.addItem("Unfollow", function() {
-            TT.log('Menu: Unfollow');
-            TT.showLoading('Unfollowing ' + userFound.name);
-            TT.fetchURL('friendships/destroy/' + userFound.id + '.json', {
-                type: 'POST',
-                onload: function() {
-                    TT.hideLoading();
-                }
+    var createMenu = function(data) {
+        TT.log('create status menu');
+        var rel = data.relationship,
+            tar = rel.target, src = rel.source;
+        
+        if (src.following && src.followed_by) {
+            var title = 'Direct Message';
+            menu.addItem(title, function() {
+                TT.log('Menu: Direct Message');
+                Titanium.App.Properties.setString('directTo', userFound.screen_name);
+                TT.log('Direct Message To: ' + userFound.screen_name);
+                
+                TT.openWindow('post.html');   
             });
-        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-    } else {
-        var followMenu = menu.addItem("Follow", function() {
-            TT.log('Menu: Follow');
-            TT.showLoading('Following ' + userFound.name);
-            TT.fetchURL('friendships/create.json?user_id=' + userFound.id + '&follow=true', {
-                type: 'POST',
-                data: {
-                    user_id: userFound.id,
-                    follow: true
-                },
-                onload: function() {
-                    TT.hideLoading();
-                    //TODO
-                    followMenu.setLabel('Unfollow');
-                }
+        }
+
+        if (src.following) {
+            menu.addItem("Unfollow", function() {
+                TT.log('Menu: Unfollow');
+                TT.showLoading('Unfollowing ' + userFound.name);
+                TT.fetchURL('friendships/destroy/' + userFound.id + '.json', {
+                    type: 'POST',
+                    onload: function() {
+                        TT.hideLoading();
+                    }
+                });
             });
-        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-    }
+        } else {
+            menu.addItem("Follow", function() {
+                TT.log('Menu: Follow');
+                TT.showLoading('Following ' + userFound.name);
+                TT.fetchURL('friendships/create/' + userFound.id + '.json?follow=true', {
+                    type: 'POST',
+                    data: {
+                        follow: true
+                    },
+                    onload: function() {
+                        TT.hideLoading();
+                    }
+                });
+                
+            });
+        }
+        
+    };
+
+
     
-    menu.addItem("Report Spam", function() {
-        TT.log('Menu: Report Spam');
-        TT.not('Spam reporting');
-    }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-
-
-    var creds = TT.getCreds();
-    if (creds.login !== userFound.screen_name) {
-        Titanium.UI.setMenu(menu);
+    var fetchMenu = function() {
+        var creds = TT.getCreds();
+        if (creds.login !== userFound.screen_name) {
+            Titanium.UI.setMenu(menu);
+        }
+        TT.log('Fetching Friendship Status');
+        TT.log(Y.JSON.stringify(userFound));
+        TT.fetchURL('friendships/show.json?target_id=' + userFound.id + '&source_id=' + creds.userid, {
+            type: 'GET',
+            onload: function() {
+                var json = eval('(' + this.responseText + ')');
+                createMenu(json);
+            }
+        });
     }
-
