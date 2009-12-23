@@ -10,8 +10,8 @@ YUI().use('*', function(Yc) {
 });
 
 
-
 var TT = {
+    dataDir: Titanium.Filesystem.getApplicationDataDirectory(),
     ping: function(ev, evData) {
         TT.loadSettings();
         if (TT.settings.report === '0') {
@@ -276,6 +276,7 @@ var TT = {
 
         switch (t) {
             case 'direct_messages':
+            case 'direct_messages/sent':
                 title = 'Direct Messages';
                 break;
             case 'mentions':
@@ -343,6 +344,7 @@ var TT = {
                 TT.createMentionsMenu();
                 break;
             case 'direct_messages':
+            case 'direct_messages/sent':
                 TT.createDirectsMenu();
                 break;
             case 'search':
@@ -359,33 +361,33 @@ var TT = {
 
         Titanium.Gesture.addEventListener('shake',function(e) {
             TT.ping('shake.update');
-            TT.updateTimelines('direct_messages');
+            TT.updateTimelines(TT.currentType);
         });
 
         menu.addItem("Refresh", function() {
             TT.log('Menu: Refresh Timeline');
-            TT.updateTimelines('direct_messages');
-        }/*, Titanium.UI.Android.SystemIcon.VIEW*/);
+            TT.updateTimelines(TT.currentType);
+        });
 
         menu.addItem("Timeline", function() {
             TT.log('Menu: Timeline');
             Titanium.UI.currentWindow.close();
-        }/*, Titanium.UI.Android.SystemIcon.ZOOM*/);
+        });
 
         menu.addItem("Friends", function() {
             TT.log('Menu: Friends');
             TT.showFriends();
-        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
+        });
 
         menu.addItem("Search", function() {
             TT.log('Menu: Search');
             tt.openWindow('search.html');
-        }/*, Titanium.UI.Android.SystemIcon.SEARCH*/);
+        });
 
         menu.addItem("Settings", function() {
             TT.log('Menu: Settings');
             TT.showSettings();
-        }/*, Titanium.UI.Android.SystemIcon.PREFERENCES*/);
+        });
 
         Titanium.UI.setMenu(menu);
     },
@@ -506,6 +508,25 @@ var TT = {
     showDirects: function() {
         TT.ping('show.directs');
         TT.showTimeline('direct_messages');
+        Y.delegate('click', function(e) {
+            var tar = e.currentTarget;
+            var item = tar.get('innerHTML').toLowerCase()
+            TT.log('[Directs] ' + item);
+            if (!tar.hasClass('selected')) {
+                TT.log('Change timeline to: ' + item);
+                tar.get('parentNode').all('.selected').removeClass('selected');
+                tar.addClass('selected');
+                Y.one('#timeline ul').set('innerHTML', '');
+                if (item == 'outbox') {
+                    TT.showTimeline('direct_messages/sent');
+                } else {
+                    TT.showTimeline('direct_messages');
+                }
+            } else {
+                TT.log('ignore the click');
+            }
+
+        }, '#tabs', 'li');
     },
     showSearch: function(q) {
         TT.ping('show.search');
@@ -544,11 +565,18 @@ var TT = {
         var d = '<em>' + TT.toRelativeTime(new Date(row.created_at)) + '</em>',
             s = TT.html_entity_decode(row.source), a,
             div = document.createElement('div'),
-            txt = row.text;
+            txt = row.text,
+            creds = TT.getCreds();
+
 
         if (row.sender_id) {
             //Direct Message Formatting
-            row.user = row.sender;
+            if (row.sender_id == creds.userid) {
+                //You sent it
+                row.user = row.recipient;
+            } else {
+                row.user = row.sender;
+            }
             s = 'direct message';
         }
 
@@ -656,6 +684,7 @@ var TT = {
             TT.updateTimeStamps();
             switch (t) {
                 case 'direct_messages':
+                case 'direct_messages/sent':
                     title = 'Direct Messages';
                     break;
                 case 'mentions':
@@ -814,6 +843,12 @@ Titanium.UI.currentWindow.addEventListener('focused', function() {
 
 TT.getCreds();
 TT.loadSettings();
+
+/*
+if (!TT.dataDir.exists('cache')) {
+    TT.dataDir.createDirectory('cache').setWritable();
+}
+*/
 
 Y.delegate('click', function(e) {
     var tar = e.currentTarget,

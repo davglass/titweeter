@@ -3,19 +3,18 @@
 	<head>
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />  
 		<title>Titweeter: Direct Messages</title>
-        <link rel="stylesheet" type="text/css" href="css/twitter.css">
+        <link rel="stylesheet" type="text/css" href="../css/twitter.css">
+        <style>
+            body {
+                width: 300px;
+            }
+        </style>
 	</head>
 	<body>
         <ul id="tabs">
-            <li class="selected">Inbox</li>
-            <li>Outbox</li>
+            <li>Inbox</li>
+            <li class="selected">Outbox</li>
         </ul>
         <div id="timeline"><ul></ul></div>
-		<script src="js/yui3.js"></script>
-		<script src="js/titweeter.js"></script>
-		<script>
-        TT.showDirects();
-        TT.ping('windowLoad', 'directs.html');
-        </script>
 	</body>
 </html>
