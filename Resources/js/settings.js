@@ -53,7 +53,6 @@ Y.one('#num_items').on('click', function(e) {
 });
 
 
-/*
 Y.one('#check_time').on('click', function(e) {
     // create dialog
     var dialog = Titanium.UI.createOptionDialog(),
@@ -93,10 +92,9 @@ Y.one('#check_time').on('click', function(e) {
     // show dialog
     dialog.show();
 });
-*/
 
 Y.one('#num_items strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_NUM_ITEMS'));
-//Y.one('#check_time strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_CHECK_TIME'));
+Y.one('#check_time strong').set('innerHTML', Titanium.App.Properties.getString('SETTING_CHECK_TIME'));
 
 
 var lis = Y.all('#settings li.check');
@@ -118,15 +116,13 @@ Y.one('#clear_cache').on('click', function(e) {
     a.addEventListener('click',function(e) {
         if (e.index == 0) {
             TT.showLoading('Clearing Application Settings');
-            TT.openDB();
-            db.execute('delete from tweets');
-            db.execute('drop table tweets');
+
             Titanium.App.Properties.setString('LOGIN', '');
             Titanium.App.Properties.setString('PASSWD', '');
+            Titanium.App.Properties.setString('USERID', '');
             Titanium.App.Properties.setString('SETTING_NUM_ITEMS', 50);
 
             TT.alert('Application Cache Cleared.');
-            Titanium.UI.currentWindow.close();
         }
     });
 
@@ -139,7 +135,7 @@ var checkCreds = function(l, p) {
         // hide the keyboards if they're showing
         var login = l,
             passwd = p,
-            url = 'https:/'+'/' + login + ':' + passwd + '@twitter.com/account/verify_credentials.json',
+            url = 'http:/'+'/' + login + ':' + passwd + '@twitter.com/account/verify_credentials.json',
             xhr = Titanium.Network.createHTTPClient();
 
             TT.showLoading('Verifing Credentials');
@@ -153,10 +149,8 @@ var checkCreds = function(l, p) {
                     TT.showError(json.error);
                 } else {
                     TT.ping('settings.creds'); 
-                    TT.openDB();
-                    db.execute('delete from tweets');
                     TT.log('setCreds..');
-                    TT.setCreds(login, passwd);
+                    TT.setCreds(json.screen_name, passwd, json.id);
                     Y.one('#check').get('parentNode').set('innerHTML', '<small>To reset, clear the App Cache.</small>');
                     Y.one('#mask').removeClass('disabled');
                     Y.one('#login').get('parentNode').set('innerHTML', 'Username: ' + l);

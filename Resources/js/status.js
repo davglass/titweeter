@@ -31,28 +31,18 @@
         button1.addEventListener('click', function() {
             TT.showLoading('Fetching Status');
             TT.log('Load New Status Window');
-            TT.log('Checking Status Cache');
-            TT.openDB();
-            var rows = db.execute('select * from tweets where (id = ' + stat.in_reply_to_status_id + ')');
-            if (rows.isValidRow()) {
-                TT.log('Found Status in Cache');
-                json = Y.JSON.parse(rows.fieldByName('json'));
+            var creds = TT.getCreds();
+            var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/show/" + stat.in_reply_to_status_id + '.json';
+
+            TT.log('URL: ' + url);
+
+            var xhr = Titanium.Network.createHTTPClient();
+            xhr.onload = function() {
+                var json = eval('('+this.responseText+')');
                 showStatus(json);
-                rows.next();
-            } else {
-                var creds = TT.getCreds();
-                var url = TT.proto + ":/"+"/" + creds.login + ":" + creds.passwd + "@twitter.com/statuses/show/" + stat.in_reply_to_status_id + '.json';
-
-                TT.log('URL: ' + url);
-
-                var xhr = Titanium.Network.createHTTPClient();
-                xhr.onload = function() {
-                    var json = eval('('+this.responseText+')');
-                    showStatus(json);
-                };
-                xhr.open("GET",url);
-                xhr.send();
-            }
+            };
+            xhr.open("GET",url);
+            xhr.send();
         });
         
     }
@@ -73,91 +63,123 @@
     };
 
     var menu = Titanium.UI.createMenu();
-
-    menu.addItem("Reply", function() {
-        
-        Titanium.App.Properties.setString('replyTo', stat.user.screen_name);
-        Titanium.App.Properties.setString('replyID', stat.id);
-        TT.log('Reply to: ' + stat.user.screen_name);
-        TT.log('Reply to: ' + stat.id);
-        
-        TT.openWindow('post.html');   
-    }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
     
-    menu.addItem("Retweet", function() {
-        
-        Titanium.App.Properties.setString('retweetID', stat.id);
-        Titanium.App.Properties.setString('retweetStatus', 'RT @' + stat.user.screen_name + ' ' + stat.message);
-        TT.log('Retweet: ' + stat.id);
-        
-        TT.openWindow('post.html');
-    }/*, Titanium.UI.Android.SystemIcon.REPLY*/);
-    
-    if (stat.user.following) {
-        menu.addItem("Direct Message", function() {
-            TT.log('Menu: Direct Message');
-            Titanium.App.Properties.setString('directTo', stat.user.screen_name);
-            TT.log('Direct Message To: ' + stat.user.screen_name);
+    if (!stat.sender_id) {
+        //Not a Direct Message
+        menu.addItem("Reply", function() {
+            
+            Titanium.App.Properties.setString('replyTo', stat.user.screen_name);
+            Titanium.App.Properties.setString('replyID', stat.id);
+            TT.log('Reply to: ' + stat.user.screen_name);
+            TT.log('Reply to: ' + stat.id);
             
             TT.openWindow('post.html');   
-        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-        menu.addItem("Unfollow", function() {
-            TT.log('Menu: Unfollow');
-            TT.showLoading('Unfollowing ' + stat.user.name);
-            TT.fetchURL('friendships/destroy/' + stat.user.id + '.json', {
-                type: 'POST',
-                onload: function() {
-                    TT.hideLoading();
-                }
-            });
-        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-    } else {
-        menu.addItem("Follow", function() {
-            TT.log('Menu: Follow');
-            TT.showLoading('Following ' + stat.user.name);
-            TT.fetchURL('friendships/create/' + stat.user.id + '.json?follow=true', {
-                type: 'POST',
-                data: {
-                    follow: true
-                },
-                onload: function() {
-                    TT.hideLoading();
-                }
-            });
-            
-        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-    }
+        });
     
-    if (stat.favorited) {
-        menu.addItem("Remove Favorite", function() {
-            TT.log('Menu: Remove Favorite');
-            TT.showLoading('Removing as Favorite', true);
-            TT.fetchURL('favorites/destroy/' + stat.id + '.json', {
-                stat: 'POST',
-                onload: function() {
-                    TT.hideLoading();
-                }
-            });
-        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-    } else {
-        menu.addItem("Add Favorite", function() {
-            TT.log('Menu: Add Favorite');
-            TT.showLoading('Marking as Favorite', true);
-            TT.fetchURL('favorites/create/' + stat.id + '.json', {
-                type: 'POST',
-                onload: function() {
-                    TT.hideLoading();
-                }
-            });
-        }/*, Titanium.UI.Android.SystemIcon.SEND*/);
-    }
-    menu.addItem("Report Spam", function() {
-        TT.log('Menu: Report Spam');
-        TT.not('Report Spam');
-    }/*, Titanium.UI.Android.SystemIcon.SEND*/);
+        menu.addItem("Retweet", function() {
+            if (TT.settings.native_retweet == '1') {
+                TT.showLoading('Posting Retweet...');
+                TT.fetchURL('statuses/retweet/' + stat.id + '.json', {
+                    type: 'POST',
+                    onload: function() {
+                        TT.hideLoading();
+                        TT.alert('Retweeted');
+                    }
+                });
+            } else {
+                Titanium.App.Properties.setString('retweetID', stat.id);
+                Titanium.App.Properties.setString('retweetStatus', 'RT @' + stat.user.screen_name + ' ' + stat.message);
+                TT.log('Retweet: ' + stat.id);
+                TT.openWindow('post.html');
+            }
+        });
+    
 
+        if (stat.favorited) {
+            menu.addItem("Remove Favorite", function() {
+                TT.log('Menu: Remove Favorite');
+                TT.showLoading('Removing as Favorite', true);
+                TT.fetchURL('favorites/destroy/' + stat.id + '.json', {
+                    stat: 'POST',
+                    onload: function() {
+                        TT.hideLoading();
+                    }
+                });
+            });
+        } else {
+            menu.addItem("Add Favorite", function() {
+                TT.log('Menu: Add Favorite');
+                TT.showLoading('Marking as Favorite', true);
+                TT.fetchURL('favorites/create/' + stat.id + '.json', {
+                    type: 'POST',
+                    onload: function() {
+                        TT.hideLoading();
+                    }
+                });
+            });
+        }
+    }
+
+
+    var createMenu = function(data) {
+        TT.log('create status menu');
+        var rel = data.relationship,
+            tar = rel.target, src = rel.source;
+        
+        if (src.following && src.followed_by) {
+            var title = 'Direct Message';
+            if (stat.sender_id) {
+                title = 'Reply to Direct';
+            }
+            menu.addItem(title, function() {
+                TT.log('Menu: Direct Message');
+                Titanium.App.Properties.setString('directTo', stat.user.screen_name);
+                TT.log('Direct Message To: ' + stat.user.screen_name);
+                
+                TT.openWindow('post.html');   
+            });
+        }
+
+        if (src.following) {
+            menu.addItem("Unfollow", function() {
+                TT.log('Menu: Unfollow');
+                TT.showLoading('Unfollowing ' + stat.user.name);
+                TT.fetchURL('friendships/destroy/' + stat.user.id + '.json', {
+                    type: 'POST',
+                    onload: function() {
+                        TT.hideLoading();
+                    }
+                });
+            });
+        } else {
+            menu.addItem("Follow", function() {
+                TT.log('Menu: Follow');
+                TT.showLoading('Following ' + stat.user.name);
+                TT.fetchURL('friendships/create/' + stat.user.id + '.json?follow=true', {
+                    type: 'POST',
+                    data: {
+                        follow: true
+                    },
+                    onload: function() {
+                        TT.hideLoading();
+                    }
+                });
+                
+            });
+        }
+        
+    };
     var creds = TT.getCreds();
     if (creds.login !== stat.user.screen_name) {
         Titanium.UI.setMenu(menu);
     }
 
+    
+    TT.log('Fetching Friendship Status');
+    TT.fetchURL('friendships/show.json?target_id=' + stat.user.id + '&source_id=' + creds.userid, {
+        type: 'GET',
+        onload: function() {
+            var json = eval('(' + this.responseText + ')');
+            createMenu(json);
+        }
+    });

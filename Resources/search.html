@@ -1,5 +1,7 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 	<head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />  
 		<title>Titweeter: Search</title>
         <link rel="stylesheet" type="text/css" href="css/twitter.css">
     </head>
@@ -13,7 +15,7 @@
                 id: 'search',
                 barColor: '#ccc',
                 hintText: 'Enter a search term',
-                returnKeyType: Titanium.UI.RETURNKEY_SEARCH 
+                returnKeyType: Titanium.UI.RETURNKEY_SEARCH
             },
             term = Titanium.App.Properties.getString('SEARCH'),
             doSearch = function() {

@@ -1,14 +1,18 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 	<head>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />  
 		<title>Titweeter: Timeline</title>
         <link rel="stylesheet" type="text/css" href="css/twitter.css">
 	</head>
 	<body>
         <div id="timeline"><ul></ul></div>
+        <div id="more">Load More</div>
 		<script src="js/yui3.js"></script>
 		<script src="js/titweeter.js"></script>
         <script>
         TT.log('Fetching from accounts');
+        
         var creds = TT.getCreds(), login=false;
 
         if (creds.login && creds.passwd) {
@@ -36,9 +40,7 @@
                 var creds = TT.getCreds();
                 if (creds.login && creds.passwd) {
                     TT.log('Timeline focused');
-                    if (TT.lastID) {
-                        window.setTimeout(TT.updateTimelines, 200);
-                    }
+                    TT.checkTimeline();
                 }
             }
         });
