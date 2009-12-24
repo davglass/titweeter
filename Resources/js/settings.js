@@ -157,6 +157,7 @@ var checkCreds = function(l, p) {
                     Y.one('#passwd').get('parentNode').remove();
                     
                     TT.hideLoading();
+                    TT.notify('Credentials verified.');
                 }
             };
             xhr.open("GET",url);

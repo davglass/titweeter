@@ -78,12 +78,12 @@
     
         menu.addItem("Retweet", function() {
             if (TT.settings.native_retweet == '1') {
-                TT.showLoading('Posting Retweet...');
+                TT.notify('Posting Retweet...');
                 TT.fetchURL('statuses/retweet/' + stat.id + '.json', {
                     type: 'POST',
                     onload: function() {
-                        TT.hideLoading();
-                        TT.alert('Retweeted');
+                        //TT.hideLoading();
+                        TT.notify('Retweeted');
                     }
                 });
             } else {

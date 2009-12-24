@@ -62,6 +62,12 @@ var TT = {
     checkTime: function(i) {
         return ((i < 10) ? '0' + i : i);
     },
+    notify: function(str) {
+        var notification = Titanium.UI.createNotification()
+        notification.setMessage(str);
+        notification.setDelay(3);
+        notification.show();
+    },
     alert: function(str) {
         TT.hideLoading();
         var a = Titanium.UI.createAlertDialog();
@@ -1001,7 +1007,7 @@ Y.delegate('touchend', function(e) {
             TT.openWindow('post.html');
         } else if (TT.currentType == 'direct_messages/sent') {
         } else {
-            TT.swipe = (x - TT.swipe);
+            TT.swipe = 9999;
             TT.showSwipe(e.currentTarget.get('parentNode'), e.currentTarget);
         }
     } else {
@@ -1027,7 +1033,7 @@ Y.delegate('touchend', function(e) {
     TT.log('Touch End: ' + (TT.swipeY - y));
     if (((x > TT.swipe) && (x - TT.swipe) > 75) && ((TT.swipeY > 0) && (y - TT.swipeY) < 20)) {
         TT.log('Swipe Event Found..');
-        TT.swipe = (x - TT.swipe);
+        TT.swipe = 9999;
         TT.hideSwipe();
     } else {
         TT.swipe = 0;
@@ -1038,9 +1044,9 @@ Y.delegate('click', function(e) {
     var type = e.currentTarget.get('innerHTML').toLowerCase(),
         stat = TT.swipeItem;
 
-    if (TT.swipe > 0) {
+    if (TT.swipe !== 0) {
         TT.swipe = 0;
-        //return;
+        return;
     }
     TT.log('Click on swipemenu: ' + type);
     TT.hideSwipe();
@@ -1054,12 +1060,12 @@ Y.delegate('click', function(e) {
             break;
         case 'retweet':
             if (TT.settings.native_retweet == '1') {
-                TT.showLoading('Posting Retweet...');
+                TT.notify('Posting Retweet...');
                 TT.fetchURL('statuses/retweet/' + stat.id + '.json', {
                     type: 'POST',
                     onload: function() {
-                        TT.hideLoading();
-                        TT.alert('Retweeted');
+                        //TT.hideLoading();
+                        TT.notify('Retweeted');
                     }
                 });
             } else {
